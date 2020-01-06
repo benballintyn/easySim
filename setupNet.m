@@ -30,16 +30,7 @@ for i=1:netParams.nGroups
     preStart = netParams.groupInfo(i).start_ind;
     preEnd = netParams.groupInfo(i).end_ind;
     targets = netParams.groupInfo(i).targets;
-    conn_probs = netParams.groupInfo(i).target_conn_probs;
-    mean_conn_strengths = netParams.groupInfo(i).mean_conn_strengths;
-    std_conn_strengths = netParams.groupInfo(i).std_conn_strenghts;
-    connectTypes = netParams.groupInfo(i).connection_types;
-    for j=1:length(targets)
-        postStart = netParams.groupInfo(targets(j)).start_ind;
-        postEnd = netParams.groupInfo(targets(j)).end_ind;
-        w = getWeightMatrix(i,j,netParams);
-        dGsyn(postStart:postEnd,preStart:preEnd) = w;
-    end
+    
 end
 
 

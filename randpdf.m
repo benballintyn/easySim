@@ -43,7 +43,7 @@ function x=randpdf(p,px,dim)
 %   p= [0 1 3 0 0 4 5 4 0];
 %   randpdf(p,px,[50000,1])
 
-% By Adam Nies³ony, Opole University of Technology, Poland
+% By Adam Niesï¿½ony, Opole University of Technology, Poland
 
 % check the number of input
 error(nargchk(3, 3, nargin))
@@ -95,4 +95,5 @@ if nargout==0
     legend('generated numbers')
 else
     x=reshape(userDistNum,dim);
+end
 end

@@ -10,15 +10,13 @@ classdef randomConnector < handle
     end
     
     methods
-        function obj = randomConnector(preGroup,postGroup,connProb,weightDist,netParams)
-            %UNTITLED3 Construct an instance of this class
-            %   Detailed explanation goes here
+        function obj = randomConnector(preGroup,postGroup,connProb,weightDist,groupInfo)
             obj.preGroup = preGroup;
             obj.postGroup = postGroup;
             obj.connProb = connProb;
             obj.weightDist = weightDist;
-            obj.nPre = netParams.groupInfo(preGroup).end_ind - netParams.groupInfo(preGroup).start_ind + 1;
-            obj.nPost = netParams.groupInfo(postGroup).end_ind - netParams.groupInfo(postGroup).start_ind + 1;
+            obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
         end
         
         function dGsynMat = genConn(obj)

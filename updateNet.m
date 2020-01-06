@@ -1,5 +1,8 @@
 function [V,Gref,GsynE,GsynI] = updateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells)
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells) %#codegen
+
+coder.gpu.kernelfun;
+
 spiked = (V > Vth);
 e_spiked = spiked.*ecells;
 i_spiked = spiked.*icells;

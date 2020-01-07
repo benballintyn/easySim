@@ -17,25 +17,25 @@ classdef gaussianConnector < handle
     end
     
     methods
-        function obj = gaussianConnector(preGroup,postGroup,connProbFunction,weightFunction,useWrap,netParams)
+        function obj = gaussianConnector(preGroup,postGroup,connProbFunction,weightFunction,useWrap,groupInfo)
             %UNTITLED3 Construct an instance of this class
             %   Detailed explanation goes here
-            if (netParams.groupInfo(preGroup).coordinateFrame.ID ~= netParams.groupInfo(postGroup).coordinateFrame.ID)
+            if (groupInfo(preGroup).coordinateFrame.ID ~= groupInfo(postGroup).coordinateFrame.ID)
                 error('gaussianConnector only supports connecting groups in the same coordinate frame')
             end
             obj.preGroup = preGroup;
             obj.postGroup = postGroup;
-            obj.nPre = netParams.groupInfo(preGroup).end_ind - netParams.groupInfo(preGroup).start_ind + 1;
-            obj.nPost = netParams.groupInfo(postGroup).end_ind - netParams.groupInfo(postGroup).start_ind + 1;
+            obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
             obj.connProbFunction = connProbFunction;
             obj.weightFunction = weightFunction;
-            obj.xcoordsPre = netParams.groupInfo(preGroup).xcoords;
-            obj.xcoordsPost = netParams.groupInfo(postGroup).xcoords;
-            obj.ycoordsPre = netParams.groupInfo(preGroup).ycoords;
-            obj.ycoordsPost = netPrams.groupInfo(postGroup).ycoords;
+            obj.xcoordsPre = groupInfo(preGroup).xcoords;
+            obj.xcoordsPost = groupInfo(postGroup).xcoords;
+            obj.ycoordsPre = groupInfo(preGroup).ycoords;
+            obj.ycoordsPost = groupInfo(postGroup).ycoords;
             obj.useWrap = useWrap;
-            obj.xmax = netParams.groupInfo(preGroup).coordinateFrame.xmax;
-            obj.ymax = netParams.groupInfo(pregroup).coordinateFrame.ymax;
+            obj.xmax = groupInfo(preGroup).coordinateFrame.xmax;
+            obj.ymax = groupInfo(pregroup).coordinateFrame.ymax;
         end
         
         function dGsynMat = genConn(obj)

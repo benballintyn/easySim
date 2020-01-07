@@ -16,21 +16,19 @@ classdef gradientConnector < handle
     end
     
     methods
-        function obj = gaussianConnector(preGroup,postGroup,connProbFunction,weightFunction,netParams)
-            %UNTITLED3 Construct an instance of this class
-            %   Detailed explanation goes here
+        function obj = gradientConnector(preGroup,postGroup,connProbFunction,weightFunction,groupInfo)
             obj.preGroup = preGroup;
             obj.postGroup = postGroup;
-            obj.nPre = netParams.groupInfo(preGroup).end_ind - netParams.groupInfo(preGroup).start_ind + 1;
-            obj.nPost = netParams.groupInfo(postGroup).end_ind - netParams.groupInfo(postGroup).start_ind + 1;
+            obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
             obj.connProbFunction = connProbFunction;
             obj.weightFunction = weightFunction;
-            obj.xcoordsPre = netParams.groupInfo(preGroup).xcoords;
-            obj.xcoordsPost = netParams.groupInfo(postGroup).xcoords;
-            obj.ycoordsPre = netParams.groupInfo(preGroup).ycoords;
-            obj.ycoordsPost = netPrams.groupInfo(postGroup).ycoords;
-            obj.xmax = netParams.groupInfo(preGroup).coordinateFrame.xmax;
-            obj.ymax = netParams.groupInfo(pregroup).coordinateFrame.ymax;
+            obj.xcoordsPre = groupInfo(preGroup).xcoords;
+            obj.xcoordsPost = groupInfo(postGroup).xcoords;
+            obj.ycoordsPre = groupInfo(preGroup).ycoords;
+            obj.ycoordsPost = groupInfo(postGroup).ycoords;
+            obj.xmax = groupInfo(preGroup).coordinateFrame.xmax;
+            obj.ymax = groupInfo(pregroup).coordinateFrame.ymax;
         end
         
         function dGsynMat = genConn(obj)

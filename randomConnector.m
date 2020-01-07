@@ -1,8 +1,8 @@
-classdef randomConnector < handle
+classdef randomConnector < connectionType
     
     properties
-        preGroup
-        postGroup
+        %preGroup %defined by superclass
+        %postGroup %defined by superclass
         connProb
         weightDist
         nPre

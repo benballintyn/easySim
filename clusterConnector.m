@@ -1,4 +1,4 @@
-classdef clusterConnector < handle
+classdef clusterConnector < connectionType
     
     properties
         groupID

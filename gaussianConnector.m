@@ -1,8 +1,8 @@
-classdef gaussianConnector < handle
+classdef gaussianConnector < connectionType
     
     properties
-        preGroup
-        postGroup
+        %preGroup % defined in superclass
+        %postGroup % defined in superclass
         nPre
         nPost
         connProbFunction
@@ -13,7 +13,9 @@ classdef gaussianConnector < handle
         ycoordsPost
         useWrap
         xmax
+        xmin
         ymax
+        ymin
     end
     
     methods
@@ -35,11 +37,15 @@ classdef gaussianConnector < handle
             obj.ycoordsPost = groupInfo(postGroup).ycoords;
             obj.useWrap = useWrap;
             obj.xmax = groupInfo(preGroup).coordinateFrame.xmax;
-            obj.ymax = groupInfo(pregroup).coordinateFrame.ymax;
+            obj.xmin = groupInfo(preGroup).coordinateFrame.xmin;
+            obj.ymax = groupInfo(preGroup).coordinateFrame.ymax;
+            obj.ymin = groupInfo(preGroup).coordinateFrame.ymin;
         end
         
         function dGsynMat = genConn(obj)
             dGsynMat = zeros(obj.nPost,obj.nPre);
+            xrng = obj.xmax - obj.xmin;
+            yrng = obj.ymax - obj.ymin;
             for i=1:obj.nPre
                 for j=1:obj.nPost
                     if (obj.preGroup == obj.postGroup && i == j)
@@ -48,11 +54,11 @@ classdef gaussianConnector < handle
                         dx = abs(obj.xcoordsPre(i) - obj.xcoordsPost(j));
                         dy = abs(obj.ycoordsPre(i) - obj.ycoordsPost(j));
                         if (obj.useWrap)
-                            if (dx > .5*obj.xmax)
-                                dx = obj.xmax - dx;
+                            if (dx > .5*xrng)
+                                dx = xrng - dx;
                             end
-                            if (dy > .5*obj.ymax)
-                                dy = obj.ymax - dy;
+                            if (dy > .5*yrng)
+                                dy = yrng - dy;
                             end
                         end
                         distance = sqrt(dx.^2 + dy.^2);

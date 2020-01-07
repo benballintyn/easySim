@@ -1,4 +1,4 @@
-classdef gradientConnector < handle
+classdef gradientConnector < connectionType
     
     properties
         preGroup

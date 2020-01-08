@@ -64,7 +64,13 @@ classdef gaussianConnector < connectionType
                         distance = sqrt(dx.^2 + dy.^2);
                         connProb = obj.connProbFunction(distance);
                         if (rand < connProb)
-                            dGsynMat(j,i) = obj.weightFunction(distance);
+                            if (nargin(obj.weightFunction) == 1)
+                                dGsynMat(j,i) = obj.weightFunction(distance);
+                            elseif (nargin(obj.weightFunction) == 0)
+                                dGsynMat(j,i) = obj.weightFunction();
+                            else
+                                error('gaussianConnector weight function should take 0 or 1 argument (distance)')
+                            end
                         end
                     end
                 end

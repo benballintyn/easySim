@@ -19,27 +19,56 @@ classdef ELIFnetwork < handle
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
-        function addGroup(obj,N,neuronType,coordinateFrame,varargin)
+        function addGroup(obj,name,N,neuronType,coordinateFrame,varargin)
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
+            % default values
             defaultXmin = 0;
             defaultXmax = 1;
             defaultYmin = 0;
             defaultYmax = 1;
+            default_mean_V0 = -.07; % -70mV
+            default_std_V0 = 0;
+            default_mean_Vth = -.05; % -50mV
+            default_std_Vth = 0;
+            default_mean_dGref = ;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
-            coordCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
+            validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
             positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
+            addRequired(p,'name',@ischar)
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
             addRequired(p,'coordinateFrame',positiveNoInfCheck);
-            addParameter(p,'xmin',defaultXmin,coordCheck);
-            addParameter(p,'xmax',defaultXmax,coordCheck);
-            addParameter(p,'ymin',defaultYmin,coordCheck);
-            addParameter(p,'ymax',defaultYmax,coordCheck);
-            parse(p,N,neuronType,coordinateFrame,varargin{:})
+            addParameter(p,'xmin',defaultXmin,validNumCheck);
+            addParameter(p,'xmax',defaultXmax,validNumCheck);
+            addParameter(p,'ymin',defaultYmin,validNumCheck);
+            addParameter(p,'ymax',defaultYmax,validNumCheck);
+            addParameter(p,'mean_V0',default_mean_V0,validNumCheck);
+            addParameter(p,'std_V0',default_std_V0,validNumCheck);
+            addParameter(p,'mean_Vth',default_mean_Vth,validNumCheck);
+            addParameter(p,'std_Vth',default_std_Vth,validNumCheck);
+            addParameter(p,'mean_dGref',default_mean_dGref,validNumCheck);
+            addParameter(p,'std_dGref',default_std_dGref,validNumCheck);
+            addParameter(p,'mean_tau_ref',default_mean_tau_ref,validNumCheck);
+            addParameter(p,'std_tau_ref',default_std_tau_ref,validNumCheck);
+            addParameter(p,'mean_tau_synE',default_mean_tau_synE,validNumCheck);
+            addParameter(p,'std_tau_synE',default_std_tau_synE,validNumCheck);
+            addParameter(p,'mean_tau_synI',default_mean_tau_synI,validNumCheck);
+            addParameter(p,'std_tau_synI',default_std_tau_synI,validNumCheck);
+            addParameter(p,'mean_Cm',default_mean_Cm,validNumCheck);
+            addParameter(p,'std_Cm',default_std_Cm,validNumCheck);
+            addParameter(p,'mean_Gl',default_mean_Gl,validNumCheck);
+            addParameter(p,'std_Gl',default_std_Gl,validNumCheck);
+            addParameter(p,'mean_El',default_mean_El,validNumCheck);
+            addParameter(p,'std_El',default_std_El,validNumCheck);
+            addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
+            addParameter(p,'std_dth',default_std_dth,validNumCheck);
+            parse(p,name,N,neuronType,coordinateFrame,varargin{:})
+            
             % Housekeeping to keep track of # of groups and neurons
             obj.nGroups = obj.nGroups + 1;
+            obj.groupInfo(obj.nGroups).name = name;
             obj.groupInfo(obj.nGroups).id = obj.nGroups;
             obj.groupInfo(obj.nGroups).start_ind = obj.nNeurons+1;
             obj.groupInfo(obj.nGroups).end_ind = obj.nNeurons + p.Results.N;

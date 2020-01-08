@@ -1,8 +1,9 @@
 % ELIFnetwork_test
+clear all;
 net = ELIFnetwork();
-net.addGroup(1000,'excitatory',1);
-net.addGroup(1000,'excitatory',2);
-net.addGroup(1000,'excitatory',3);
+net.addGroup('group1',1000,'excitatory',1);
+net.addGroup('group2',1000,'excitatory',2);
+net.addGroup('group3',1000,'excitatory',3);
 
 weightRange = 0:.001:1;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
@@ -23,3 +24,5 @@ net.connect(3,3,'gaussian',gaussConnParams);
 net.connect(1,2,'random',randConnParams);
 net.connect(1,3,'random',randConnParams);
 net.connect(2,3,'random',randConnParams);
+
+

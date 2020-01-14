@@ -1,30 +1,72 @@
 function [V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt] = setupNet(net,sim)
+          tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells] = setupNet(net,simobj,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
 
-% Variables that may change with time
-V = zeros(N,1);
-Gref = zeros(N,1);
-GsynE = zeros(N,1);
-GsynI = zeros(N,1);
-Iapp = zeros(N,1);
-Vth = zeros(N,1);
-VsynE = ones(N,1);
-VsynI = ones(N,1);
+if (useGpu)
+    % Variables that may change with time
+    V = gpuArray(zeros(N,1));
+    Gref = gpuArray(zeros(N,1));
+    GsynE = gpuArray(zeros(N,1));
+    GsynI = gpuArray(zeros(N,1));
+    Iapp = gpuArray(zeros(N,1));
+    Vth = gpuArray(zeros(N,1));
+    VsynE = gpuArray(ones(N,1));
+    VsynI = gpuArray(ones(N,1));
 
-% Variables that will not change with time
-dGref = zeros(N,1);
-tau_ref = zeros(N,1);
-dGsyn = zeros(N,N);
-tau_synE = zeros(N,1);
-tau_synI = zeros(N,1);
-Cm  = zeros(N,1);
-Gl = zeros(N,1);
-El = zeros(N,1);
-Ek = zeros(N,1);
-dth = zeros(N,1);
-dt = sim.dt;
+    % Variables that will not change with time
+    dGref = gpuArray(zeros(N,1));
+    tau_ref = gpuArray(zeros(N,1));
+    dGsyn = gpuArray(zeros(N,N));
+    tau_synE = gpuArray(zeros(N,1));
+    tau_synI = gpuArray(zeros(N,1));
+    Cm  = gpuArray(zeros(N,1));
+    Gl = gpuArray(zeros(N,1));
+    El = gpuArray(zeros(N,1));
+    Ek = gpuArray(zeros(N,1));
+    dth = gpuArray(zeros(N,1));
+    dt = simobj.dt;
+    ecells = gpuArray(zeros(net.nNeurons,1));
+    icells = gpuArray(zeros(net.nNeurons,1));
+else
+    % Variables that may change with time
+    V = zeros(N,1);
+    Gref = zeros(N,1);
+    GsynE = zeros(N,1);
+    GsynI = zeros(N,1);
+    Iapp = zeros(N,1);
+    Vth = zeros(N,1);
+    VsynE = ones(N,1);
+    VsynI = ones(N,1);
+
+    % Variables that will not change with time
+    dGref = zeros(N,1);
+    tau_ref = zeros(N,1);
+    dGsyn = zeros(N,N);
+    tau_synE = zeros(N,1);
+    tau_synI = zeros(N,1);
+    Cm  = zeros(N,1);
+    Gl = zeros(N,1);
+    El = zeros(N,1);
+    Ek = zeros(N,1);
+    dth = zeros(N,1);
+    dt = simobj.dt;
+    ecells = zeros(N,1);
+    icells = zeros(N,1);
+end
+for i=1:net.nGroups
+    s = net.groupInfo(i).start_ind;
+    e = net.groupInfo(i).end_ind;
+    if (net.groupInfo(i).isExcitatory)
+        ecells(s:e) = 1;
+    elseif (net.groupInfo(i).isInhibitory)
+        icells(s:e) = 1;
+    else
+        error('Group is neither excitatory or inhibitory?')
+    end
+end
+ecells = logical(ecells);
+icells = logical(icells);
 
 for i=1:net.nGroups
     preStart = net.groupInfo(i).start_ind;
@@ -51,6 +93,4 @@ for i=1:net.nGroups
         dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
     end
 end
-
-
 end

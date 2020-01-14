@@ -10,16 +10,25 @@ classdef ELIFnetwork < handle
     methods
         function obj = ELIFnetwork()
             obj.nGroups = 0;
-            obj.groupInfo = struct('id',{},'isExcitatory',{},'isInhibitory',{},...
-                                   'targets',{},'connections',{},...
-                                   'connectionParams',{},'start_ind',{},...
-                                   'end_ind',{},'coordinateFrame',{},...
-                                   'xcoords',{},'ycoords',{});
+            %obj.groupInfo = struct(
             obj.nNeurons = 0;
+            obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
+                'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
+                'mean_V0',{},'std_V0',{},'mean_Vth',{},'std_Vth',{},'mean_dGref',{},'std_dGref',{},'mean_tau_ref',{},...
+                'std_tau_ref',{},'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},...
+                'std_tau_synI',{},'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
+                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
         function addGroup(obj,name,N,neuronType,coordinateFrame,varargin)
+            % ordered field names
+            orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
+                'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
+                'mean_V0','std_V0','mean_Vth','std_Vth','mean_dGref','std_dGref','mean_tau_ref',...
+                'std_tau_ref','mean_tau_synE','std_tau_synE','mean_tau_synI',...
+                'std_tau_synI','mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
+                'std_El','mean_dth','std_dth','xcoords','ycoords'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -32,7 +41,22 @@ classdef ELIFnetwork < handle
             default_std_V0 = 0;
             default_mean_Vth = -.05; % -50mV
             default_std_Vth = 0;
-            default_mean_dGref = ;
+            default_mean_dGref = 2e-6; % 2 uS
+            default_std_dGref = 0;
+            default_mean_tau_ref = .2e-3; % .2 ms
+            default_std_tau_ref = 0;
+            default_mean_tau_synE = 10e-3; % 10ms
+            default_std_tau_synE = 0;
+            default_mean_tau_synI = 1e-3; % 1ms
+            default_std_tau_synI = 0;
+            default_mean_Cm = .1e-9; % 100pF
+            default_std_Cm = 0;
+            default_mean_Gl = 10e-9; % 10nS
+            default_std_Gl = 0;
+            default_mean_El = -.07; % -70mV
+            default_std_El = 0;
+            default_mean_dth = .002; %2mV
+            default_std_dth = 0;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
             positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
@@ -68,15 +92,24 @@ classdef ELIFnetwork < handle
             
             % Housekeeping to keep track of # of groups and neurons
             obj.nGroups = obj.nGroups + 1;
-            obj.groupInfo(obj.nGroups).name = name;
-            obj.groupInfo(obj.nGroups).id = obj.nGroups;
-            obj.groupInfo(obj.nGroups).start_ind = obj.nNeurons+1;
-            obj.groupInfo(obj.nGroups).end_ind = obj.nNeurons + p.Results.N;
+            groupInfo.id = obj.nGroups;
+            groupInfo.start_ind = obj.nNeurons+1;
+            groupInfo.end_ind = obj.nNeurons + p.Results.N;
             obj.nNeurons = obj.nNeurons + p.Results.N;
             
+            % Funnel parser results into net.groupInfo
+            names = fieldnames(p.Results);
+            for i=1:length(names)
+                if (any(strcmp(names{i},{'xmin','xmax','ymin','ymax'})))
+                    continue;
+                else
+                    groupInfo.(names{i}) = p.Results.(names{i});
+                end
+            end
+            
             % Determine whether the group is excitatory or inhibitory
-            obj.groupInfo(obj.nGroups).isExcitatory = strcmp(p.Results.neuronType,'excitatory');
-            obj.groupInfo(obj.nGroups).isInhibitory = strcmp(p.Results.neuronType,'inhibitory');
+            groupInfo.isExcitatory = strcmp(p.Results.neuronType,'excitatory');
+            groupInfo.isInhibitory = strcmp(p.Results.neuronType,'inhibitory');
             
             % Set coordinate frame of new group and add to network list of
             % coordinate frame if it is new
@@ -88,11 +121,23 @@ classdef ELIFnetwork < handle
             if (~ismember(p.Results.coordinateFrame,[obj.coordinateFrames.ID]))
                 obj.coordinateFrames = [obj.coordinateFrames cf];
             end
-            obj.groupInfo(obj.nGroups).coordinateFrame = cf;
+            groupInfo.coordinateFrame = cf;
             
             % assign x and y coordinates to each new neuron
-            obj.groupInfo(obj.nGroups).xcoords = rand(1,p.Results.N)*(p.Results.xmax - p.Results.xmin) + p.Results.xmin;
-            obj.groupInfo(obj.nGroups).ycoords = rand(1,p.Results.N)*(p.Results.ymax - p.Results.ymin) + p.Results.ymin;
+            groupInfo.xcoords = rand(1,p.Results.N)*(p.Results.xmax - p.Results.xmin) + p.Results.xmin;
+            groupInfo.ycoords = rand(1,p.Results.N)*(p.Results.ymax - p.Results.ymin) + p.Results.ymin;
+            [~,inds] = sort(groupInfo.xcoords);
+            groupInfo.xcoords = groupInfo.xcoords(inds);
+            groupInfo.ycoords = groupInfo.ycoords(inds);
+            
+            % empty holders for connections
+            groupInfo.targets = [];
+            groupInfo.connections = [];
+            groupInfo.connectionParams = {};
+            
+            % reorder field names in the groupInfo for this group
+            s = orderfields(groupInfo,orderedFieldNames);
+            obj.groupInfo(obj.nGroups) = s;
         end
         
         function connect(obj,src_id,tgt_id,connType,connParams)

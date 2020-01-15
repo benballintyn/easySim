@@ -11,7 +11,7 @@ if (useGpu)
     GsynI = gpuArray(zeros(N,1,'single'));
     maxGsynE = gpuArray(zeros(N,1,'single'));
     maxGsynI = gpuArray(zeros(N,1,'single'));
-    Iapp = gpuArray(ones(N,1,'single'))*1.9e-10;
+    Iapp = gpuArray(ones(N,1,'single'))*2e-10;
     Vth = gpuArray(zeros(N,1,'single'));
     VsynE = gpuArray(ones(N,1,'single'));
     VsynI = gpuArray(ones(N,1,'single'));
@@ -32,31 +32,31 @@ if (useGpu)
     icells = gpuArray(zeros(net.nNeurons,1));
 else
     % Variables that may change with time
-    V = zeros(N,1);
-    Gref = zeros(N,1);
-    GsynE = zeros(N,1);
-    GsynI = zeros(N,1);
-    maxGsynE = zeros(N,1);
-    maxGsynI = zeros(N,1);
-    Iapp = ones(N,1)*1.5e-10;
-    Vth = zeros(N,1);
-    VsynE = ones(N,1);
-    VsynI = ones(N,1);
+    V = zeros(N,1,'single');
+    Gref = zeros(N,1,'single');
+    GsynE = zeros(N,1,'single');
+    GsynI = zeros(N,1,'single');
+    maxGsynE = zeros(N,1,'single');
+    maxGsynI = zeros(N,1,'single');
+    Iapp = ones(N,1,'single')*2e-10;
+    Vth = zeros(N,1,'single');
+    VsynE = ones(N,1,'single');
+    VsynI = ones(N,1,'single');
 
     % Variables that will not change with time
-    dGref = zeros(N,1);
-    tau_ref = zeros(N,1);
-    dGsyn = zeros(N,N);
-    tau_synE = zeros(N,1);
-    tau_synI = zeros(N,1);
-    Cm  = zeros(N,1);
-    Gl = zeros(N,1);
-    El = zeros(N,1);
-    Ek = zeros(N,1);
-    dth = zeros(N,1);
+    dGref = zeros(N,1,'single');
+    tau_ref = zeros(N,1,'single');
+    dGsyn = zeros(N,N,'single');
+    tau_synE = zeros(N,1,'single');
+    tau_synI = zeros(N,1,'single');
+    Cm  = zeros(N,1,'single');
+    Gl = zeros(N,1,'single');
+    El = zeros(N,1,'single');
+    Ek = zeros(N,1,'single');
+    dth = zeros(N,1,'single');
     dt = simobj.dt;
-    ecells = zeros(N,1);
-    icells = zeros(N,1);
+    ecells = zeros(N,1,'single');
+    icells = zeros(N,1,'single');
 end
 for i=1:net.nGroups
     s = net.groupInfo(i).start_ind;

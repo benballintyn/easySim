@@ -1,7 +1,30 @@
 function [V,Gref,GsynE,GsynI,spiked] = updateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells) %#codegen
 
-%coder.gpu.kernelfun;
+coder.gpu.kernelfun;
+% V=gpuArray(V);
+% Gref = gpuArray(Gref);
+% dGref = gpuArray(dGref);
+% tau_ref = gpuArray(tau_ref);
+% Vth = gpuArray(Vth);
+% VsynE = gpuArray(VsynE);
+% VsynI = gpuArray(VsynI);
+% GsynE = gpuArray(GsynE);
+% GsynI = gpuArray(GsynI);
+% maxGsynE = gpuArray(maxGsynE);
+% maxGsynI = gpuArray(maxGsynI);
+% dGsyn = gpuArray(dGsyn);
+% tau_synE = gpuArray(tau_synE);
+% tau_synI = gpuArray(tau_synI);
+% Cm = gpuArray(Cm);
+% Gl = gpuArray(Gl);
+% El = gpuArray(El);
+% Ek = gpuArray(Ek);
+% dth = gpuArray(dth);
+% Iapp = gpuArray(Iapp);
+% dt = gpuArray(dt);
+% ecells = gpuArray(ecells);
+% icells = gpuArray(icells);
 
 spiked = (V > Vth);
 V(spiked) = -.08;

@@ -43,7 +43,7 @@ classdef gaussianConnector < connectionType
         end
         
         function dGsynMat = genConn(obj)
-            dGsynMat = zeros(obj.nPost,obj.nPre);
+            distances = zeros(obj.nPost,obj.nPre);
             xrng = obj.xmax - obj.xmin;
             yrng = obj.ymax - obj.ymin;
             for i=1:obj.nPre
@@ -61,20 +61,13 @@ classdef gaussianConnector < connectionType
                                 dy = yrng - dy;
                             end
                         end
-                        distance = sqrt(dx.^2 + dy.^2);
-                        connProb = obj.connProbFunction(distance);
-                        if (rand < connProb)
-                            if (nargin(obj.weightFunction) == 1)
-                                dGsynMat(j,i) = obj.weightFunction(distance);
-                            elseif (nargin(obj.weightFunction) == 0)
-                                dGsynMat(j,i) = obj.weightFunction();
-                            else
-                                error('gaussianConnector weight function should take 0 or 1 argument (distance)')
-                            end
-                        end
+                        distances(j,i) = sqrt(dx.^2 + dy.^2);
                     end
                 end
             end
+            connProb = obj.connProbFunction(distances);
+            dGsynMat = (rand(size(connProb)) < connProb);
+            dGsynMat = dGsynMat.*obj.weightFunction(distances);
         end
     end
 end

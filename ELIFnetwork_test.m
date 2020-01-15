@@ -5,7 +5,7 @@ net.addGroup('group1',1000,'excitatory',1);
 net.addGroup('group2',1000,'excitatory',2);
 net.addGroup('group3',1000,'excitatory',3);
 
-weightRange = 0:.001:1;
+weightRange = 0:1e-14:1e-11;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
 randConnProb = .01;
 weightFunction = @() rand();
@@ -25,15 +25,37 @@ net.connect(1,2,'random',randConnParams);
 net.connect(1,3,'random',randConnParams);
 net.connect(2,3,'random',randConnParams);
 
-simobj.dt = 1e-5;
-useGpu = false;
+useGpu = true;
+
+if (useGpu)
+    %allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
+    simobj.dt = gpuArray(1e-5);
+else
+    %allSpikes = zeros(net.nNeurons,nT);
+    simobj.dt = 1e-5;
+end
+nT = ceil((1/simobj.dt)/10);
+if (useGpu)
+    allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
+    allVs = gpuArray(zeros(net.nNeurons,nT,'single'));
+else
+    allSpikes = zeros(net.nNeurons,nT);
+    allVs = zeros(net.nNeurons,nT);
+end
+
 [V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells] = setupNet(net,simobj,useGpu);
 
+disp('starting simulation')
 tic;
-for i=1:(1/simobj.dt)
-    [V,Gref,GsynE,GsynI,spiked] = updateNet_mex(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,...
+for i=1:nT
+    [V,Gref,GsynE,GsynI,spiked] = updateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells);
+    allVs(:,i) = V;
+    allSpikes(:,i) = spiked;
+    if (mod(i,1000)==0)
+        disp(num2str(i))
+    end
 end
 sim_dur = toc;
 disp(['Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(1/simobj.dt)) ' --> ' num2str((sim_dur/(1/simobj.dt))/simobj.dt) 'x real time'])

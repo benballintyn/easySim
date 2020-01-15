@@ -5,26 +5,26 @@ N = net.nNeurons;
 
 if (useGpu)
     % Variables that may change with time
-    V = gpuArray(zeros(N,1));
-    Gref = gpuArray(zeros(N,1));
-    GsynE = gpuArray(zeros(N,1));
-    GsynI = gpuArray(zeros(N,1));
-    Iapp = gpuArray(zeros(N,1));
-    Vth = gpuArray(zeros(N,1));
-    VsynE = gpuArray(ones(N,1));
-    VsynI = gpuArray(ones(N,1));
+    V = gpuArray(zeros(N,1,'single'));
+    Gref = gpuArray(zeros(N,1,'single'));
+    GsynE = gpuArray(zeros(N,1,'single'));
+    GsynI = gpuArray(zeros(N,1,'single'));
+    Iapp = gpuArray(ones(N,1,'single'))*2e-10;
+    Vth = gpuArray(zeros(N,1,'single'));
+    VsynE = gpuArray(ones(N,1,'single'));
+    VsynI = gpuArray(ones(N,1,'single'));
 
     % Variables that will not change with time
-    dGref = gpuArray(zeros(N,1));
-    tau_ref = gpuArray(zeros(N,1));
-    dGsyn = gpuArray(zeros(N,N));
-    tau_synE = gpuArray(zeros(N,1));
-    tau_synI = gpuArray(zeros(N,1));
-    Cm  = gpuArray(zeros(N,1));
-    Gl = gpuArray(zeros(N,1));
-    El = gpuArray(zeros(N,1));
-    Ek = gpuArray(zeros(N,1));
-    dth = gpuArray(zeros(N,1));
+    dGref = gpuArray(zeros(N,1,'single'));
+    tau_ref = gpuArray(zeros(N,1,'single'));
+    dGsyn = gpuArray(zeros(N,N,'single'));
+    tau_synE = gpuArray(zeros(N,1,'single'));
+    tau_synI = gpuArray(zeros(N,1,'single'));
+    Cm  = gpuArray(zeros(N,1,'single'));
+    Gl = gpuArray(zeros(N,1,'single'));
+    El = gpuArray(zeros(N,1,'single'));
+    Ek = gpuArray(zeros(N,1,'single'));
+    dth = gpuArray(zeros(N,1,'single'));
     dt = simobj.dt;
     ecells = gpuArray(zeros(net.nNeurons,1));
     icells = gpuArray(zeros(net.nNeurons,1));
@@ -34,7 +34,7 @@ else
     Gref = zeros(N,1);
     GsynE = zeros(N,1);
     GsynI = zeros(N,1);
-    Iapp = zeros(N,1);
+    Iapp = ones(N,1)*2e-10;
     Vth = zeros(N,1);
     VsynE = ones(N,1);
     VsynI = ones(N,1);
@@ -73,7 +73,7 @@ for i=1:net.nGroups
     preEnd = net.groupInfo(i).end_ind;
     groupN = preEnd - preStart + 1;
     % initialize all nonzero variables for current group (V(0), Vth, dGref,
-    % tau_ref, tau_synE, tau_synI, Cm, Gl, El, dth)
+    % tau_ref, tau_synE, tau_synI, Cm, Gl, El, Ek, dth)
     V(preStart:preEnd) = normrnd(net.groupInfo(i).mean_V0,net.groupInfo(i).std_V0,groupN,1);
     Vth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth,net.groupInfo(i).std_Vth,groupN,1);
     dGref(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dGref,net.groupInfo(i).std_dGref,groupN,1);
@@ -83,6 +83,7 @@ for i=1:net.nGroups
     Cm(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Cm,net.groupInfo(i).std_Cm,groupN,1);
     Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
     El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
+    Ek(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Ek,net.groupInfo(i).std_Ek,groupN,1);
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
     
     targets = net.groupInfo(i).targets;

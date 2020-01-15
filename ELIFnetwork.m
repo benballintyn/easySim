@@ -17,7 +17,7 @@ classdef ELIFnetwork < handle
                 'mean_V0',{},'std_V0',{},'mean_Vth',{},'std_Vth',{},'mean_dGref',{},'std_dGref',{},'mean_tau_ref',{},...
                 'std_tau_ref',{},'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},...
                 'std_tau_synI',{},'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
-                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
+                'std_El',{},'mean_Ek',{},'std_Ek',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
@@ -28,7 +28,7 @@ classdef ELIFnetwork < handle
                 'mean_V0','std_V0','mean_Vth','std_Vth','mean_dGref','std_dGref','mean_tau_ref',...
                 'std_tau_ref','mean_tau_synE','std_tau_synE','mean_tau_synI',...
                 'std_tau_synI','mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
-                'std_El','mean_dth','std_dth','xcoords','ycoords'};
+                'std_El','mean_Ek','std_Ek','mean_dth','std_dth','xcoords','ycoords'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -55,6 +55,8 @@ classdef ELIFnetwork < handle
             default_std_Gl = 0;
             default_mean_El = -.07; % -70mV
             default_std_El = 0;
+            default_mean_Ek = -.08; % -80mV
+            default_std_Ek = 0;
             default_mean_dth = .002; %2mV
             default_std_dth = 0;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
@@ -86,6 +88,8 @@ classdef ELIFnetwork < handle
             addParameter(p,'std_Gl',default_std_Gl,validNumCheck);
             addParameter(p,'mean_El',default_mean_El,validNumCheck);
             addParameter(p,'std_El',default_std_El,validNumCheck);
+            addParameter(p,'mean_Ek',default_mean_Ek,validNumCheck);
+            addParameter(p,'std_Ek',default_std_Ek,validNumCheck);
             addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
             addParameter(p,'std_dth',default_std_dth,validNumCheck);
             parse(p,name,N,neuronType,coordinateFrame,varargin{:})

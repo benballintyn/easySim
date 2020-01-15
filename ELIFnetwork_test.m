@@ -1,14 +1,14 @@
 % ELIFnetwork_test
 clear all;
 net = ELIFnetwork();
-net.addGroup('group1',1000,'excitatory',1);
-net.addGroup('group2',1000,'excitatory',2);
-net.addGroup('group3',1000,'excitatory',3);
+net.addGroup('group1',10000,'excitatory',1);
+net.addGroup('group2',10000,'excitatory',2);
+net.addGroup('group3',10000,'excitatory',3);
 
-weightRange = 0:1e-14:1e-11;
+weightRange = 0:1e-15:1e-10;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
 randConnProb = .01;
-weightFunction = @() rand();
+weightFunction = @() 1e-10*rand();
 gaussConnProbFunction = @(x)(sqrt(2)/(.05*sqrt(pi)))*exp(-x.^2/(2*.05^2));
 
 gaussConnParams.connProbFunction = gaussConnProbFunction;
@@ -27,14 +27,16 @@ net.connect(2,3,'random',randConnParams);
 
 useGpu = true;
 
+dt=1e-4;
+simTime = .1;
 if (useGpu)
     %allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
-    simobj.dt = gpuArray(1e-5);
+    simobj.dt = gpuArray(dt);
 else
     %allSpikes = zeros(net.nNeurons,nT);
-    simobj.dt = 1e-5;
+    simobj.dt = dt;
 end
-nT = ceil((1/simobj.dt)/10);
+nT = ceil((.1/simobj.dt));
 if (useGpu)
     allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
     allVs = gpuArray(zeros(net.nNeurons,nT,'single'));
@@ -43,13 +45,13 @@ else
     allVs = zeros(net.nNeurons,nT);
 end
 
-[V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,dGsyn,tau_synE,...
+[V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells] = setupNet(net,simobj,useGpu);
 
 disp('starting simulation')
 tic;
 for i=1:nT
-    [V,Gref,GsynE,GsynI,spiked] = updateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,...
+    [V,Gref,GsynE,GsynI,spiked] = updateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells);
     allVs(:,i) = V;
     allSpikes(:,i) = spiked;
@@ -58,5 +60,5 @@ for i=1:nT
     end
 end
 sim_dur = toc;
-disp(['Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(1/simobj.dt)) ' --> ' num2str((sim_dur/(1/simobj.dt))/simobj.dt) 'x real time'])
+disp(['Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])
 

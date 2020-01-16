@@ -189,6 +189,18 @@ classdef ELIFnetwork < handle
                 obj.groupInfo(src_id).connectionParams{end+1} = connParams;
             end
         end
+        
+        function print(obj,verbose)
+            if (nargin < 2)
+                verbose = false;
+            end
+            if (~verbose)
+                fprintf('======================================== %s ======================================== \n',class(obj))
+                fprintf('Total # of neurons: %i \n',obj.nNeurons)
+                fprintf('Excitatory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isExcitatory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isExcitatory]).id]))
+                fprintf('Inhibitory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isInhibitory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isInhibitory]).id]))
+            end
+        end
     end
     
     methods (Static)

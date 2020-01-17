@@ -75,5 +75,8 @@ for i=1:nT
     
     allVs(:,i) = V;
     allSpikes(:,i) = spiked;
+    if (mod(i,1000)==0)
+        disp(num2str(i))
+    end
 end
 end

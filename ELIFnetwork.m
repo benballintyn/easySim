@@ -199,6 +199,55 @@ classdef ELIFnetwork < handle
                 fprintf('Total # of neurons: %i \n',obj.nNeurons)
                 fprintf('Excitatory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isExcitatory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isExcitatory]).id]))
                 fprintf('Inhibitory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isInhibitory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isInhibitory]).id]))
+                fprintf('\n')
+                fprintf('CONNECTION SUMMARY: \n')
+                for i=1:obj.nGroups
+                    for j=1:length(obj.groupInfo(i).targets)
+                        fprintf('%1$i ====> %2$i %3$s \n',i,obj.groupInfo(i).targets(j),class(obj.groupInfo(i).connections(j)))
+                    end
+                end
+            else
+                fprintf('======================================== %s ======================================== \n',class(obj))
+                fprintf('Total # of neurons: %i \n',obj.nNeurons)
+                fprintf('Excitatory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isExcitatory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isExcitatory]).id]))
+                fprintf('Inhibitory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isInhibitory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isInhibitory]).id]))
+                fprintf('\n')
+                fprintf('__________________________________________________________________________________________________\n')
+                fprintf('GROUP INFO: \n')
+                for i=1:obj.nGroups
+                    fprintf('GROUP ID: %i \n',obj.groupInfo(i).id)
+                    fprintf('GROUP NAME: %s \n', obj.groupInfo(i).name)
+                    fprintf('NEURON TYPE: %s \n',obj.groupInfo(i).neuronType)
+                    fprintf('COORDINATE FRAME: %i \n',obj.groupInfo(i).coordinateFrame.ID)
+                    fprintf('     xmin: %1$i     xmax: %2$i \n',obj.groupInfo(i).coordinateFrame.xmin,obj.groupInfo(i).coordinateFrame.xmax)
+                    fprintf('     ymin: %1$i     ymax: %2$i \n',obj.groupInfo(i).coordinateFrame.ymin,obj.groupInfo(i).coordinateFrame.ymax)
+                    fnames = fieldnames(obj.groupInfo(i));
+                    for j=1:length(fnames)
+                        if (contains(fnames{j},'mean'))
+                            fprintf('%1$15s = %2$10g    %3$15s = %4$10g \n',fnames{j},obj.groupInfo(i).(fnames{j}),fnames{j+1},obj.groupInfo(i).(fnames{j+1}))
+                        end
+                    end
+                    fprintf('____________________________________________\n')
+                    fprintf('\n')
+                end
+                fprintf('CONNECTION SUMMARY: \n')
+                for i=1:obj.nGroups
+                    for j=1:length(obj.groupInfo(i).targets)
+                        fprintf('%1$i ====> %2$i \n',i,obj.groupInfo(i).targets(j))
+                        fprintf('    %s \n',class(obj.groupInfo(i).connections(j)))
+                        fnames = fieldnames(obj.groupInfo(i).connectionParams{j});
+                        for k=1:length(fnames)
+                            if (isa(obj.groupInfo(i).connectionParams{j}.(fnames{k}),'function_handle'))
+                                fprintf('    %1$s : %2$s \n',fnames{k},func2str(obj.groupInfo(i).connectionParams{j}.(fnames{k})))
+                            elseif (isa(obj.groupInfo(i).connectionParams{j}.(fnames{k}),'weightDistribution'))
+                                w = obj.groupInfo(i).connectionParams{j}.(fnames{k});
+                                fprintf('    %s : \n',fnames{k})
+                                fprintf('    min : %1$10g       max : %2$10g \n',w.xrange(1),w.xrange(end))
+                            end
+                        end
+                        fprintf('\n')
+                    end
+                end
             end
         end
     end

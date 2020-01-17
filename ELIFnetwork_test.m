@@ -1,10 +1,10 @@
 % ELIFnetwork_test
 clear all;
 net = ELIFnetwork();
-net.addGroup('group1',2000,'excitatory',1);
-net.addGroup('group2',2000,'excitatory',2);
-net.addGroup('group3',2000,'excitatory',3);
-net.addGroup('group4',2000,'inhibitory',4);
+net.addGroup('group1',1000,'excitatory',1);
+net.addGroup('group2',1000,'excitatory',2);
+net.addGroup('group3',1000,'excitatory',3);
+net.addGroup('group4',1000,'inhibitory',4);
 
 weightRange = 0:1e-15:1.1e-10;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
@@ -30,7 +30,7 @@ net.connect(4,1,'random',randConnParams);
 net.connect(4,2,'random',randConnParams);
 net.connect(4,3,'random',randConnParams);
 
-useGpu = 0;
+useGpu = 1;
 disp(['useGPU = ' num2str(useGpu)])
 dt=single(1e-4);
 simTime = 1;

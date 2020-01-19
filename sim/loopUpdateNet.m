@@ -41,8 +41,8 @@ for i=1:nT
 
     %dGsynE_sum = sum(dGsyn.*e_spiked,2);
     %dGsynI_sum = sum(dGsyn.*i_spiked,2);
-    dGsynE_sum = sum(dGsyn(:,e_spiked),2);
-    dGsynI_sum = sum(dGsyn(:,i_spiked),2);
+    dGsynE_sum = sum(dGsyn(:,e_spiked)',1)';
+    dGsynI_sum = sum(dGsyn(:,i_spiked)',1)';
 
     GsynE = GsynE + dGsynE_sum; GsynE = arrayfun(@min,GsynE,maxGsynE);
     GsynI = GsynI + dGsynI_sum; GsynI = arrayfun(@min,GsynI,maxGsynI);
@@ -54,7 +54,18 @@ for i=1:nT
     %Gref = Gref + dGref.*spiked;
     %Gref = Gref + arrayfun(@times,dGref,spiked);
     %dVdt = (1./Cm).*(Gl.*(El - V + dth.*exp((V - Vth)./dth)) + Gref.*(Ek - V) + Isyn + Iapp);
-    dVdt = (1./Cm).*(Gl.*(El - V + dth.*exp((V - Vth)./dth)) + Isyn + Iapp);
+    %dVdt = (1./Cm).*(Gl.*(El - V + dth.*exp((V - Vth)./dth)) + Isyn + Iapp);
+    f1 = (1./Cm);
+    f2 = arrayfun(@minus,El,V);
+    f3 = arrayfun(@minus,V,Vth);
+    f4 = arrayfun(@rdivide,f3,dth);
+    f5 = arrayfun(@exp,f4);
+    f6 = arrayfun(@times,dth,f5);
+    f7 = arrayfun(@plus,f2,f6);
+    f8 = arrayfun(@times,Gl,f7);
+    f9 = arrayfun(@plus,f8,Isyn);
+    f10 = arrayfun(@plus,f9,Iapp);
+    dVdt = arrayfun(@times,f1,f10);
     %{
     f1 = (1./Cm);
     f2 = arrayfun(@minus,El,V);

@@ -1,6 +1,6 @@
 % ELIFnetwork_test
 clear all;
-net = ELIFnetwork();
+net = EVLIFnetwork();
 net.addGroup('group1',1000,'excitatory',1);
 net.addGroup('group2',1000,'excitatory',2);
 net.addGroup('group3',1000,'excitatory',3);
@@ -19,6 +19,9 @@ gaussConnParams.useWrap = true;
 randConnParams.connProb = randConnProb;
 randConnParams.weightDistribution = uniformWeightDist;
 
+randConnParams2.connProb = .1;
+randConnParams2.weightDistribution = uniformWeightDist;
+
 net.connect(1,1,'gaussian',gaussConnParams);
 net.connect(2,2,'gaussian',gaussConnParams);
 net.connect(3,3,'gaussian',gaussConnParams);
@@ -26,22 +29,23 @@ net.connect(1,2,'random',randConnParams);
 net.connect(1,3,'random',randConnParams);
 net.connect(2,3,'random',randConnParams);
 net.connect(1,4,'random',randConnParams);
-net.connect(4,1,'random',randConnParams);
-net.connect(4,2,'random',randConnParams);
-net.connect(4,3,'random',randConnParams);
+net.connect(4,1,'random',randConnParams2);
+net.connect(4,2,'random',randConnParams2);
+net.connect(4,3,'random',randConnParams2);
 
 useGpu = 1;
 disp(['useGPU = ' num2str(useGpu)])
-dt=single(1e-4);
-simTime = 1;
+dt=1e-4;
+simTime = .1;
 if (useGpu)
     %allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
-    simobj.dt = dt;
+    simobj.dt = single(dt);
 else
     %allSpikes = zeros(net.nNeurons,nT);
     simobj.dt = dt;
 end
-nT = ceil((simTime/simobj.dt));
+nT = ceil((simTime/dt));
+%{
 if (useGpu)
     allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
     allVs = gpuArray(zeros(net.nNeurons,nT,'single'));
@@ -49,12 +53,10 @@ else
     allSpikes = zeros(net.nNeurons,nT);
     allVs = zeros(net.nNeurons,nT);
 end
+%}
+[V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells] = setupEVLIFNet(net,simobj,useGpu);
 
-[V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells] = setupNet(net,simobj,useGpu);
-
-disp('starting simulation')
-tic;
 %{
 for i=1:nT
     [V,Gref,GsynE,GsynI,spiked] = updateNet_mex(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
@@ -67,14 +69,20 @@ for i=1:nT
 end
 %}
 if (~useGpu)
-    compile_easySim_noGpuArray(net.nNeurons);
-    [allVs,allSpikes] = loopUpdateNet_mex(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+    disp('compiling')
+    compile_easySimCPU(net.nNeurons);
+    disp('starting simulation')
+    tic;
+    [allVs,allSpikes] = loopUpdateNetCPU_mex(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                                       dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells,nT);
 else
-    [allVs,allSpikes] = loopUpdateNet(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells,nT);
+    
+    %compile_easySim(net.nNeurons);
+    spkfid = fopen('test.bin','W');
+    tic;
+    loopUpdateEVLIFNetGPU_fast_mex(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,nT,spkfid);
 end
 sim_dur = toc;
+fclose(spkfid);
 disp(['Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])
-figure;
-imagesc(allSpikes)

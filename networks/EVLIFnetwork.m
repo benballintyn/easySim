@@ -1,25 +1,30 @@
-classdef ELIFnetwork < handle
+classdef EVLIFnetwork < handle
     
     properties
        groupInfo
        nGroups
+       nSpikeGenerators
        nNeurons
        coordinateFrames
+       spikeGeneratorInfo
     end
     
     methods
-        function obj = ELIFnetwork()
+        function obj = EVLIFnetwork()
             obj.nGroups = 0;
+            obj.nSpikeGenerators = 0;
             %obj.groupInfo = struct(
             obj.nNeurons = 0;
             obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
-                'mean_V0',{},'std_V0',{},'mean_Vth',{},'std_Vth',{},'mean_dGref',{},'std_dGref',{},'mean_tau_ref',{},...
-                'std_tau_ref',{},'mean_VsynE',{},'std_VsynE',{},'mean_VsynI',{},'std_VsynI',{},...
+                'mean_V0',{},'std_V0',{},'mean_Vth0',{},'std_Vth0',{},'mean_Vth_max',{},'std_Vth_max',{},'mean_tau_ref',{},'std_tau_ref',{},...
+                'mean_VsynE',{},'std_VsynE',{},'mean_VsynI',{},'std_VsynI',{},...
                 'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
                 'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},'std_tau_synI',{},...
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
-                'std_El',{},'mean_Ek',{},'std_Ek',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
+                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
+            obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
+                'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
@@ -27,12 +32,12 @@ classdef ELIFnetwork < handle
             % ordered field names
             orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
                 'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
-                'mean_V0','std_V0','mean_Vth','std_Vth','mean_dGref','std_dGref','mean_tau_ref',...
-                'std_tau_ref','mean_VsynE','std_VsynE','mean_VsynI','std_VsynI',...
+                'mean_V0','std_V0','mean_Vth0','std_Vth0','mean_Vth_max','std_Vth_max','mean_tau_ref','std_tau_ref',...
+                'mean_VsynE','std_VsynE','mean_VsynI','std_VsynI',...
                 'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
                 'mean_tau_synE','std_tau_synE','mean_tau_synI','std_tau_synI',...
                 'mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
-                'std_El','mean_Ek','std_Ek','mean_dth','std_dth','xcoords','ycoords'};
+                'std_El','mean_dth','std_dth','xcoords','ycoords'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -43,11 +48,11 @@ classdef ELIFnetwork < handle
             defaultYmax = 1;
             default_mean_V0 = -.07; % -70mV
             default_std_V0 = 0;
-            default_mean_Vth = -.05; % -50mV
-            default_std_Vth = 0;
-            default_mean_dGref = 2e-6; % 2 uS
-            default_std_dGref = 0;
-            default_mean_tau_ref = .2e-3; % .2 ms
+            default_mean_Vth0 = -.05; % -50mV
+            default_std_Vth0 = 0;
+            default_mean_Vth_max = .2; % 200mV
+            default_std_Vth_max = 0;
+            default_mean_tau_ref = 1e-3; % 1 ms
             default_std_tau_ref = 0;
             default_mean_VsynE = 0; % 0mV
             default_std_VsynE = 0;
@@ -67,8 +72,6 @@ classdef ELIFnetwork < handle
             default_std_Gl = 0;
             default_mean_El = -.07; % -70mV
             default_std_El = 0;
-            default_mean_Ek = -.08; % -80mV
-            default_std_Ek = 0;
             default_mean_dth = .002; %2mV
             default_std_dth = 0;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
@@ -84,10 +87,10 @@ classdef ELIFnetwork < handle
             addParameter(p,'ymax',defaultYmax,validNumCheck);
             addParameter(p,'mean_V0',default_mean_V0,validNumCheck);
             addParameter(p,'std_V0',default_std_V0,validNumCheck);
-            addParameter(p,'mean_Vth',default_mean_Vth,validNumCheck);
-            addParameter(p,'std_Vth',default_std_Vth,validNumCheck);
-            addParameter(p,'mean_dGref',default_mean_dGref,validNumCheck);
-            addParameter(p,'std_dGref',default_std_dGref,validNumCheck);
+            addParameter(p,'mean_Vth0',default_mean_Vth0,validNumCheck);
+            addParameter(p,'std_Vth0',default_std_Vth0,validNumCheck);
+            addParameter(p,'mean_Vth_max',default_mean_Vth_max,validNumCheck);
+            addParameter(p,'std_Vth_max',default_std_Vth_max,validNumCheck);
             addParameter(p,'mean_tau_ref',default_mean_tau_ref,validNumCheck);
             addParameter(p,'std_tau_ref',default_std_tau_ref,validNumCheck);
             addParameter(p,'mean_VsynE',default_mean_VsynE,validNumCheck);
@@ -108,8 +111,6 @@ classdef ELIFnetwork < handle
             addParameter(p,'std_Gl',default_std_Gl,validNumCheck);
             addParameter(p,'mean_El',default_mean_El,validNumCheck);
             addParameter(p,'std_El',default_std_El,validNumCheck);
-            addParameter(p,'mean_Ek',default_mean_Ek,validNumCheck);
-            addParameter(p,'std_Ek',default_std_Ek,validNumCheck);
             addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
             addParameter(p,'std_dth',default_std_dth,validNumCheck);
             parse(p,name,N,neuronType,coordinateFrame,varargin{:})
@@ -164,8 +165,19 @@ classdef ELIFnetwork < handle
             obj.groupInfo(obj.nGroups) = s;
         end
         
+        function addSpikeGenerator(obj,name,N,neuronType,firingRate)
+            obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
+            info.name = name;
+            info.N = N;
+            info.neuronType = neuronType;
+            info.isExcitatory = strcmp(neuronType,'excitatory');
+            info.isInhibitory = strcmp(neuronType,'inhibitory');
+            info.firingRate = firingRate;
+            
+        end
+        
         function connect(obj,src_id,tgt_id,connType,connParams)
-            if (ELIFnetwork.checkConnInputs(connType,connParams))
+            if (EVLIFnetwork.checkConnInputs(connType,connParams))
                 if (strcmp(connType,'random'))
                     conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
                 elseif (strcmp(connType,'clustered'))
@@ -218,6 +230,7 @@ classdef ELIFnetwork < handle
                     fprintf('GROUP ID: %i \n',obj.groupInfo(i).id)
                     fprintf('GROUP NAME: %s \n', obj.groupInfo(i).name)
                     fprintf('NEURON TYPE: %s \n',obj.groupInfo(i).neuronType)
+                    fprintf('NEURON #: %i \n',obj.groupInfo(i).N);
                     fprintf('COORDINATE FRAME: %i \n',obj.groupInfo(i).coordinateFrame.ID)
                     fprintf('     xmin: %1$i     xmax: %2$i \n',obj.groupInfo(i).coordinateFrame.xmin,obj.groupInfo(i).coordinateFrame.xmax)
                     fprintf('     ymin: %1$i     ymax: %2$i \n',obj.groupInfo(i).coordinateFrame.ymin,obj.groupInfo(i).coordinateFrame.ymax)
@@ -245,7 +258,6 @@ classdef ELIFnetwork < handle
                                 fprintf('    min : %1$10g       max : %2$10g \n',w.xrange(1),w.xrange(end))
                             end
                         end
-                        fprintf('\n')
                     end
                 end
             end

@@ -1,17 +1,18 @@
 function [] = loopUpdateEVLIFNetGPU_fast(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,nT,spkfid) %#codegen
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun;
 
 fmt1 = '%i ';
 fmt2 = '%i\n';
+nSpikeGen = length(spikeGenProbs);
 for i=2:(nT+1)
     % Update thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
     dVthdt = arrayfun(@rdivide,vth1,tau_ref);
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
     
-    spiked = (V > Vth);
+    spiked = [(V > Vth) (rand(1,nSpikeGen) < spikeGenProbs)];
     
     areSpikes = any(spiked);
     if (areSpikes)

@@ -196,30 +196,29 @@ classdef EVLIFnetwork < handle
                     obj.spikeGeneratorInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
                     obj.groupInfo(src_id).connectionParams{end+1} = connParams;
                 end
-            else
-                if (EVLIFnetwork.checkConnInputs(connType,connParams))
-                    if (strcmp(connType,'random'))
-                        conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
-                    elseif (strcmp(connType,'clustered'))
-                        if (src_id ~= tgt_id)
-                            error('Source and target must be the same for clustered connections')
-                        end
-                        conn=clusterConnector(src_id,connParams.nClusters,connParams.intraConnProb,connParams.interConnProb,connParams.intraWeightDist,connParams.interWeightDist,obj.groupInfo);
-                    elseif (strcmp(connType,'gaussian'))
-                        if (obj.groupInfo(src_id).coordinateFrame.ID ~= obj.groupInfo(tgt_id).coordinateFrame.ID)
-                            error('Source and target groups must be in the same coordinate frame for gaussian connection')
-                        end
-                        conn=gaussianConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,connParams.useWrap,obj.groupInfo);
-                    elseif (strcmp(connType,'gradient'))
-                        if (obj.groupInfo(src_id).coordinateFrame.ID == obj.groupInfo(tgt_id).coordinateFrame.ID)
-                            error('Source and target groups must be in different coordinate frames for gradient connection')
-                        end
-                        conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo);
+            end
+            if (EVLIFnetwork.checkConnInputs(connType,connParams))
+                if (strcmp(connType,'random'))
+                    conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
+                elseif (strcmp(connType,'clustered'))
+                    if (src_id ~= tgt_id)
+                        error('Source and target must be the same for clustered connections')
                     end
-                    obj.groupInfo(src_id).targets = [obj.groupInfo(src_id).targets tgt_id];
-                    obj.groupInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
-                    obj.groupInfo(src_id).connectionParams{end+1} = connParams;
+                    conn=clusterConnector(src_id,connParams.nClusters,connParams.intraConnProb,connParams.interConnProb,connParams.intraWeightDist,connParams.interWeightDist,obj.groupInfo);
+                elseif (strcmp(connType,'gaussian'))
+                    if (obj.groupInfo(src_id).coordinateFrame.ID ~= obj.groupInfo(tgt_id).coordinateFrame.ID)
+                        error('Source and target groups must be in the same coordinate frame for gaussian connection')
+                    end
+                    conn=gaussianConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,connParams.useWrap,obj.groupInfo);
+                elseif (strcmp(connType,'gradient'))
+                    if (obj.groupInfo(src_id).coordinateFrame.ID == obj.groupInfo(tgt_id).coordinateFrame.ID)
+                        error('Source and target groups must be in different coordinate frames for gradient connection')
+                    end
+                    conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo);
                 end
+                obj.groupInfo(src_id).targets = [obj.groupInfo(src_id).targets tgt_id];
+                obj.groupInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
+                obj.groupInfo(src_id).connectionParams{end+1} = connParams;
             end
         end
         

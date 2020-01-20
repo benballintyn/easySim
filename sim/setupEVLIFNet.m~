@@ -1,5 +1,5 @@
 function [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs] = setupEVLIFNet(net,simobj,useGpu)
+          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells] = setupEVLIFNet(net,simobj,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
 totalN = N;
@@ -11,6 +11,7 @@ for i=1:net.nSpikeGenerators
     net.spikeGeneratorInfo(i).end_ind = end_ind;
     offset = offset + N;
     totalN = totalN + N;
+    spikeGenProbs
 end
 if (useGpu)
     % Variables that may change with time
@@ -38,7 +39,7 @@ if (useGpu)
     dt = simobj.dt;
     ecells = gpuArray(zeros(totalN,1));
     icells = gpuArray(zeros(totalN,1));
-    spikeGenProbs = gpuArray(zeros(totalN-N,1));
+    spikeGenProbs = gpuArray(zeros(
 else
     % Variables that may change with time
     V = zeros(N,1);
@@ -65,7 +66,6 @@ else
     dt = simobj.dt;
     ecells = zeros(totalN,1);
     icells = zeros(totalN,1);
-    spikeGenProbs = zeros(totalN-N,1);
 end
 for i=1:net.nGroups
     s = net.groupInfo(i).start_ind;
@@ -89,7 +89,6 @@ for i=1:nSpikeGenerators
     else
         error('spikeGenerator is neighter excitatory or inhibitory')
     end
-    spikeGenProbs((s-N):(e-N)) = net.spikeGeneratorInfo(i).firing_rate*simobj.dt;
 end
 ecells = logical(ecells);
 icells = logical(icells);

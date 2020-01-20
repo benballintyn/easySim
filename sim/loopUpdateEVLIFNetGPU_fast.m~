@@ -14,16 +14,14 @@ for i=2:(nT+1)
     
     spiked = (V > Vth);
     spikeGenSpikes = (rand(1,nSpikeGen) < spikeGenProbs);
-    allSpikes = [spiked spikeGenSpikes];
-    
+    allSpikes = [spiked spike
     areSpikes = any(spiked);
     if (areSpikes)
         V(spiked) = -.08;
         Vth(spiked) = Vth_max(spiked);
     end
-    
-    e_spiked = logical(allSpikes.*ecells);
-    i_spiked = logical(allSpikes.*icells);
+    e_spiked = logical([spiked spikeGenSpikes].*ecells);
+    i_spiked = logical(spiked.*icells);
     dGsynEdt = arrayfun(@rdivide,-GsynE,tau_synE);
     dGsynIdt = arrayfun(@rdivide,-GsynI,tau_synI);
     

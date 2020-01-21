@@ -1,5 +1,5 @@
 function [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs] = setupEVLIFNet(net,simobj,useGpu)
+          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
 totalN = N;
@@ -12,6 +12,7 @@ for i=1:net.nSpikeGenerators
     offset = offset + N;
     totalN = totalN + N;
 end
+nSpikeGen = totalN - N;
 if (useGpu)
     % Variables that may change with time
     V = gpuArray(zeros(N,1,'single'));
@@ -38,7 +39,11 @@ if (useGpu)
     dt = simobj.dt;
     ecells = gpuArray(zeros(totalN,1));
     icells = gpuArray(zeros(totalN,1));
-    spikeGenProbs = gpuArray(zeros(totalN-N,1));
+    if (nSpikeGen == 0)
+        spikeGenProbs = [];
+    else
+        spikeGenProbs = gpuArray(zeros(totalN-N,1,'single'));
+    end
 else
     % Variables that may change with time
     V = zeros(N,1);
@@ -67,6 +72,7 @@ else
     icells = zeros(totalN,1);
     spikeGenProbs = zeros(totalN-N,1);
 end
+cells2record = [];
 for i=1:net.nGroups
     s = net.groupInfo(i).start_ind;
     e = net.groupInfo(i).end_ind;
@@ -77,9 +83,18 @@ for i=1:net.nGroups
     else
         error('Group is neither excitatory or inhibitory?')
     end
+    if (net.groupInfo(i).record)
+        cells2record = [cells2record s:e];
+    end
 end
-
-for i=1:nSpikeGenerators
+if (useGpu)
+    if (length(cells2record) > 0)
+        cells2record = gpuArray(cells2record');
+    end
+else
+    cells2record = cells2record';
+end
+for i=1:net.nSpikeGenerators
     s = net.spikeGeneratorInfo(i).start_ind;
     e = net.spikeGeneratorInfo(i).end_ind;
     if (net.spikeGeneratorInfo(i).isExcitatory)
@@ -89,7 +104,7 @@ for i=1:nSpikeGenerators
     else
         error('spikeGenerator is neighter excitatory or inhibitory')
     end
-    spikeGenProbs((s-N):(e-N)) = net.spikeGeneratorInfo(i).firing_rate*simobj.dt;
+    %spikeGenProbs((s-N):(e-N)) = net.spikeGeneratorInfo(i).firing_rate*simobj.dt;
 end
 ecells = logical(ecells);
 icells = logical(icells);

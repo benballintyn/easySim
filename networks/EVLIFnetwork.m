@@ -22,7 +22,7 @@ classdef EVLIFnetwork < handle
                 'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
                 'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},'std_tau_synI',{},...
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
-                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{});
+                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
@@ -37,7 +37,7 @@ classdef EVLIFnetwork < handle
                 'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
                 'mean_tau_synE','std_tau_synE','mean_tau_synI','std_tau_synI',...
                 'mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
-                'std_El','mean_dth','std_dth','xcoords','ycoords'};
+                'std_El','mean_dth','std_dth','xcoords','ycoords','record'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -74,6 +74,7 @@ classdef EVLIFnetwork < handle
             default_std_El = 0;
             default_mean_dth = .002; %2mV
             default_std_dth = 0;
+            default_record = true;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
             positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
@@ -113,6 +114,7 @@ classdef EVLIFnetwork < handle
             addParameter(p,'std_El',default_std_El,validNumCheck);
             addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
             addParameter(p,'std_dth',default_std_dth,validNumCheck);
+            addParameter(p,'record',default_record,@islogical)
             parse(p,name,N,neuronType,coordinateFrame,varargin{:})
             
             % Housekeeping to keep track of # of groups and neurons
@@ -167,7 +169,7 @@ classdef EVLIFnetwork < handle
         
         function addSpikeGenerator(obj,name,N,neuronType,firingRate)
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
-            info.id = ['p' obj.nSpikeGenerators];
+            info.id = -obj.nSpikeGenerators;
             info.name = name;
             info.N = N;
             info.neuronType = neuronType;
@@ -178,10 +180,10 @@ classdef EVLIFnetwork < handle
         end
         
         function connect(obj,src_id,tgt_id,connType,connParams)
-            if (contains(tgt_id,'p'))
+            if (tgt_id < 0)
                 error('Cannot have a SpikeGenerator group as a connection target')
             end
-            if (contains(src_id,'p'))
+            if (src_id < 0)
                 if (EVLIFnetwork.checkConnInputs(connType,connParams))
                     if (strcmp(connType,'random'))
                         conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);

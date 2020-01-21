@@ -1,4 +1,4 @@
-function [] = compile_loopUpdateEVLIFNetGPU_fast(N,nSpikeGenCells,nCells2record)
+function [] = compile_updateEVLIFNetGPU(N,nSpikeGenCells)
 cfg = coder.gpuConfig('mex');
 cfg.InitFltsAndDblsToZero = false;
 cfg.GenerateReport = true;
@@ -6,7 +6,7 @@ cfg.ReportPotentialDifferences = false;
 
 %% Define argument types for entry-point 'loopUpdateNetGPU'.
 ARGS = cell(1,1);
-ARGS{1} = cell(24,1);
+ARGS{1} = cell(23,1);
 ARGS{1}{1} = coder.typeof(single(0),[N   1],'Gpu',true); % V
 ARGS{1}{2} = coder.typeof(single(0),[N   1],'Gpu',true); % tau_ref
 ARGS{1}{3} = coder.typeof(single(0),[N   1],'Gpu',true); % Vth
@@ -34,15 +34,8 @@ if (nSpikeGenCells > 0)
 else
     ARGS{1}{23} = coder.typeof(0,[0 0]);
 end
-if (nCells2record > 0)
-    ARGS{1}{24} = coder.typeof(0,[nCells2record 1],'Gpu',true); % cells2record
-else
-    ARGS{1}{24} = coder.typeof(0,[0 0]);
-end
-ARGS{1}{25} = coder.typeof(0); % nT (# of timesteps to simulate)
-ARGS{1}{26} = coder.typeof(0); % file ID for spikes
 
 %% Invoke MATLAB Coder.
-codegen -config cfg loopUpdateEVLIFNetGPU_fast -args ARGS{1}
+codegen -config cfg updateEVLIFNetGPU -args ARGS{1}
 end
 

@@ -1,11 +1,16 @@
 function [] = loopUpdateEVLIFNetGPU_fast(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,nT,spkfid) %#codegen
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun;
 
 fmt1 = '%i ';
 fmt2 = '%i\n';
+N = size(V,1);
 nSpikeGen = length(spikeGenProbs);
+useSpikeGen = (nSpikeGen > 0);
+n2record = length(cells2record);
+useRecord = (n2record > 0);
+spikes = zeros(N,1000);
 for i=2:(nT+1)
     % Update thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
@@ -13,8 +18,12 @@ for i=2:(nT+1)
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
     
     spiked = (V > Vth);
-    spikeGenSpikes = (rand(1,nSpikeGen) < spikeGenProbs);
-    allSpikes = [spiked spikeGenSpikes];
+    if (useSpikeGen)
+        spikeGenSpikes = (rand(nSpikeGen,1) < spikeGenProbs);
+        allSpikes = [spiked; spikeGenSpikes];
+    else
+        allSpikes = spiked;
+    end
     
     areSpikes = any(spiked);
     if (areSpikes)
@@ -39,7 +48,6 @@ for i=2:(nT+1)
         GsynI = arrayfun(@min,GsynI,maxGsynI);
     end
     
-    
     Isyn = arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)) + arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V));
    
     f1 = (1./Cm);
@@ -54,20 +62,13 @@ for i=2:(nT+1)
     f10 = arrayfun(@plus,f9,Iapp);
     dVdt = arrayfun(@times,f1,f10);
     
-    V = V + dVdt*dt;
-    %{
+    V = arrayfun(@plus,V,dVdt*dt);
     if (areSpikes)
-        fprintf(spkfid,fmt1,int16(i));
-        spkInds = find(spiked);
-        for j=1:length(spkInds)
-            fprintf(spkfid,fmt1,int16(spkInds(j)));
+        if (useRecord)
+            fwrite(spkfid,-1,'int32');
+            fwrite(spkfid,i,'int32');
+            fwrite(spkfid,find(spiked(cells2record)),'int32');
         end
-        fprintf(spkfid,'\n');
-    end
-    %}
-    if (areSpikes)
-        fwrite(spkfid,int32(i),'uint32')
-        fwrite(spkfid,spiked,'uint32');
     end
 end
 end

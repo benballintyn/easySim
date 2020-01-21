@@ -2,9 +2,9 @@
 clear all;
 net = EVLIFnetwork();
 net.addGroup('group1',1000,'excitatory',1);
-net.addGroup('group2',1000,'excitatory',2);
-net.addGroup('group3',1000,'excitatory',3);
-net.addGroup('group4',1000,'inhibitory',4);
+net.addGroup('group2',1000,'excitatory',2,'record',false);
+net.addGroup('group3',1000,'excitatory',3,'record',false);
+net.addGroup('group4',1000,'inhibitory',4,'record',false);
 
 weightRange = 0:1e-15:1.1e-10;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
@@ -36,7 +36,7 @@ net.connect(4,3,'random',randConnParams2);
 useGpu = 1;
 disp(['useGPU = ' num2str(useGpu)])
 dt=1e-4;
-simTime = .1;
+simTime = 1;
 if (useGpu)
     %allSpikes = gpuArray(zeros(net.nNeurons,nT,'single'));
     simobj.dt = single(dt);
@@ -55,7 +55,7 @@ else
 end
 %}
 [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells] = setupEVLIFNet(net,simobj,useGpu);
+          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu);
 
 %{
 for i=1:nT
@@ -76,13 +76,13 @@ if (~useGpu)
     [allVs,allSpikes] = loopUpdateNetCPU_mex(V,Gref,dGref,tau_ref,Vth,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                                       dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells,nT);
 else
-    
-    %compile_easySim(net.nNeurons);
-    spkfid = fopen('test.bin','W');
+    compile_loopUpdateEVLIFNetGPU_fast(net.nNeurons,length(spikeGenProbs),length(cells2record));
+    spkfid = fopen('test.bin','w');
     tic;
     loopUpdateEVLIFNetGPU_fast_mex(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,nT,spkfid);
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,...
+                            cells2record,nT,spkfid);
+    sim_dur = toc;
+    fclose(spkfid);
+    disp(['loopUpdateEVLIFNetGPU_fast: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])
 end
-sim_dur = toc;
-fclose(spkfid);
-disp(['Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])

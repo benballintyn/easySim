@@ -1,5 +1,6 @@
 function [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu)
+          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
+          setupEVLIFNet(net,simobj,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
 totalN = N;
@@ -20,7 +21,7 @@ if (useGpu)
     GsynI = gpuArray(zeros(N,1,'single'));
     maxGsynE = gpuArray(zeros(N,1,'single'));
     maxGsynI = gpuArray(zeros(N,1,'single'));
-    Iapp = gpuArray(ones(N,1,'single'))*2e-10;
+    Iapp = gpuArray(zeros(N,1,'single'));
     Vth = gpuArray(zeros(N,1,'single'));
     VsynE = gpuArray(ones(N,1,'single'));
     VsynI = gpuArray(ones(N,1,'single'));
@@ -36,6 +37,7 @@ if (useGpu)
     Gl = gpuArray(zeros(N,1,'single'));
     El = gpuArray(zeros(N,1,'single'));
     dth = gpuArray(zeros(N,1,'single'));
+    std_noise = gpuArray(zeros(N,1,'single'));
     dt = simobj.dt;
     ecells = gpuArray(zeros(totalN,1));
     icells = gpuArray(zeros(totalN,1));
@@ -51,7 +53,7 @@ else
     GsynI = zeros(N,1);
     maxGsynE = zeros(N,1);
     maxGsynI = zeros(N,1);
-    Iapp = ones(N,1)*2e-10;
+    Iapp = zeros(N,1);
     Vth = zeros(N,1);
     VsynE = ones(N,1);
     VsynI = ones(N,1);
@@ -67,6 +69,7 @@ else
     Gl = zeros(N,1);
     El = zeros(N,1);
     dth = zeros(N,1);
+    std_noise = zeros(N,1);
     dt = simobj.dt;
     ecells = zeros(totalN,1);
     icells = zeros(totalN,1);
@@ -130,6 +133,7 @@ for i=1:net.nGroups
     Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
     El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
+    std_noise(preStart:preEnd) = net.groupInfo(i).std_noise/sqrt(dt);
     
     targets = net.groupInfo(i).targets;
     for j=1:length(targets)

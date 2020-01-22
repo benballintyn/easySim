@@ -2,9 +2,9 @@
 clear all;
 net = EVLIFnetwork();
 net.addGroup('group1',1000,'excitatory',1);
-net.addGroup('group2',1000,'excitatory',2,'record',false);
-net.addGroup('group3',1000,'excitatory',3,'record',false);
-net.addGroup('group4',1000,'inhibitory',4,'record',false);
+net.addGroup('group2',1000,'excitatory',2);
+net.addGroup('group3',1000,'excitatory',3);
+net.addGroup('group4',1000,'inhibitory',4);
 
 weightRange = 0:1e-15:1.1e-10;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
@@ -55,7 +55,7 @@ else
 end
 %}
 [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu);
+          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu);
 
 %{
 for i=1:nT
@@ -77,10 +77,11 @@ if (~useGpu)
                                       dGsyn,tau_synE,tau_synI,Cm,Gl,El,Ek,dth,Iapp,dt,ecells,icells,nT);
 else
     compile_loopUpdateEVLIFNetGPU_fast(net.nNeurons,length(spikeGenProbs),length(cells2record));
-    spkfid = fopen('test.bin','w');
+    spkfid = fopen('test.bin','W');
+    %noise = gpuArray((std_noise'./sqrt(dt)).*randn(nT,net.nNeurons,'single'));
     tic;
     loopUpdateEVLIFNetGPU_fast_mex(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,...
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,...
                             cells2record,nT,spkfid);
     sim_dur = toc;
     fclose(spkfid);

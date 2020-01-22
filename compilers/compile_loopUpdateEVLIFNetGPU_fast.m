@@ -26,21 +26,22 @@ ARGS{1}{16} = coder.typeof(single(0),[N   1],'Gpu',true); % Gl
 ARGS{1}{17} = coder.typeof(single(0),[N   1],'Gpu',true); % El
 ARGS{1}{18} = coder.typeof(single(0),[N   1],'Gpu',true); % dth
 ARGS{1}{19} = coder.typeof(single(0),[N   1],'Gpu',true); % Iapp
-ARGS{1}{20} = coder.typeof(single(0)); % dt
-ARGS{1}{21} = coder.typeof(false,[N   1],'Gpu',true); % ecells
-ARGS{1}{22} = coder.typeof(false,[N   1],'Gpu',true); % icells
+ARGS{1}{20} = coder.typeof(single(0),[N  1],'Gpu',true); % std_noise
+ARGS{1}{21} = coder.typeof(single(0)); % dt
+ARGS{1}{22} = coder.typeof(false,[N   1],'Gpu',true); % ecells
+ARGS{1}{23} = coder.typeof(false,[N   1],'Gpu',true); % icells
 if (nSpikeGenCells > 0)
-    ARGS{1}{23} = coder.typeof(single(0),[nSpikeGenCells 1],'Gpu',true); % spikeGenProbs
-else
-    ARGS{1}{23} = coder.typeof(0,[0 0]);
-end
-if (nCells2record > 0)
-    ARGS{1}{24} = coder.typeof(0,[nCells2record 1],'Gpu',true); % cells2record
+    ARGS{1}{24} = coder.typeof(single(0),[nSpikeGenCells 1],'Gpu',true); % spikeGenProbs
 else
     ARGS{1}{24} = coder.typeof(0,[0 0]);
 end
-ARGS{1}{25} = coder.typeof(0); % nT (# of timesteps to simulate)
-ARGS{1}{26} = coder.typeof(0); % file ID for spikes
+if (nCells2record > 0)
+    ARGS{1}{25} = coder.typeof(0,[nCells2record 1],'Gpu',true); % cells2record
+else
+    ARGS{1}{25} = coder.typeof(0,[0 0]);
+end
+ARGS{1}{26} = coder.typeof(0); % nT (# of timesteps to simulate)
+ARGS{1}{27} = coder.typeof(0); % file ID for spikes
 
 %% Invoke MATLAB Coder.
 codegen -config cfg loopUpdateEVLIFNetGPU_fast -args ARGS{1}

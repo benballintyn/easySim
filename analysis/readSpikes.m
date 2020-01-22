@@ -1,5 +1,9 @@
 function [data] = readSpikes(fname,cells2record)
 raw=fread(fopen(fname),inf,'int32');
+if (isempty(raw))
+    data = [];
+    return
+end
 count = 1;
 doSkip = false;
 for i=1:length(raw)

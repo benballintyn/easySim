@@ -1,16 +1,14 @@
 function [] = loopUpdateEVLIFNetGPU_fast(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                            dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun;
 
-fmt1 = '%i ';
-fmt2 = '%i\n';
 N = size(V,1);
 nSpikeGen = length(spikeGenProbs);
 useSpikeGen = (nSpikeGen > 0);
 n2record = length(cells2record);
 useRecord = (n2record > 0);
-spikes = zeros(N,1000);
 for i=2:(nT+1)
     % Update thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
@@ -48,8 +46,10 @@ for i=2:(nT+1)
         GsynI = arrayfun(@min,GsynI,maxGsynI);
     end
     
-    Isyn = arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)) + arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V));
-   
+    Isyn = arrayfun(@plus,arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)),arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V)));
+    Iapp = arrayfun(@plus,Iapp,arrayfun(@times,std_noise,randn(N,1)));
+    %Iapp = arrayfun(@plus,Iapp,normrnd(0,std_noise));
+    
     f1 = (1./Cm);
     f2 = arrayfun(@minus,El,V);
     f3 = arrayfun(@minus,V,Vth);
@@ -63,6 +63,7 @@ for i=2:(nT+1)
     dVdt = arrayfun(@times,f1,f10);
     
     V = arrayfun(@plus,V,dVdt*dt);
+    
     if (areSpikes)
         if (useRecord)
             fwrite(spkfid,-1,'int32');
@@ -70,5 +71,6 @@ for i=2:(nT+1)
             fwrite(spkfid,find(spiked(cells2record)),'int32');
         end
     end
+    
 end
 end

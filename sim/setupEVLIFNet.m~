@@ -82,6 +82,11 @@ else
     spikeGenProbs = zeros(totalN-N,1);
 end
 
+% auto-detect dt as 10x smaller than smallest time constant
+floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))
+10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10)))
+dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))));
+
 % Go through each group and add them to the ecells and icells vectors. Also
 % determine which neurons' spikes need to be recorded
 cells2record = [];
@@ -146,7 +151,7 @@ for i=1:net.nGroups
     Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
     El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
-    std_noise(preStart:preEnd) = net.groupInfo(i).std_noise;
+    std_noise(preStart:preEnd) = net.groupInfo(i).std_noise/sqrt(dt);
     
     % Go through all of this groups targets and call the .genConn() method
     % of the appropriate connectionType to create the dGsyn matrix (weight
@@ -184,9 +189,7 @@ tau_synI = max(minval,tau_synI);
 Cm = max(minval,Cm);
 Gl = max(0,Gl);
 dth = max(0,dth);
-% auto-detect dt as 10x smaller than smallest time constant
-dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))));
-std_noise = max(0,std_noise/sqrt(dt));
+std_noise = max(0,std_noise);
 dGsyn = max(0,dGsyn);
 
 

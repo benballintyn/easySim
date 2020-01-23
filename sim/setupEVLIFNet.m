@@ -50,7 +50,7 @@ if (useGpu)
     if (nSpikeGen == 0)
         spikeGenProbs = [];
     else
-        spikeGenProbs = gpuArray(zeros(totalN-N,1,'single')); % spike probability for spike generators
+        spikeGenProbs = gpuArray(zeros(nSpikeGen,1,'single')); % spike probability for spike generators
     end
 else
     % Variables that may change with time
@@ -79,7 +79,7 @@ else
     std_noise =     zeros(N,1);
     ecells =        zeros(totalN,1);
     icells =        zeros(totalN,1);
-    spikeGenProbs = zeros(totalN-N,1);
+    spikeGenProbs = zeros(nSpikeGen,1);
 end
 
 % Go through each group and add them to the ecells and icells vectors. Also
@@ -189,5 +189,10 @@ dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/1
 std_noise = max(0,std_noise/sqrt(dt));
 dGsyn = max(0,dGsyn);
 
-
+% set spike generator spike probabilities
+for i=1:net.nSpikeGenerators
+    s = net.spikeGeneratorInfo(i).start_ind - N;
+    e = net.spikeGeneratorInfo(i).end_ind - N;
+    spikeGenProbs(s:e) = net.spikeGeneratorInfo(i).firingRate*dt;
+end
 end

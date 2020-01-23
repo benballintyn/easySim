@@ -9,6 +9,8 @@ nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
 useSpikeGen = (nSpikeGen > 0); % determine if there are any spike generators
 n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
+nSimulatedSpikes = 0;
+nGeneratedSpikes = 0;
 
 % if no spike file was given, don't record any spikes
 if (spkfid < 0)
@@ -16,7 +18,7 @@ if (spkfid < 0)
 end
 
 % Loop through nT timepoints
-for i=2:(nT+1)
+for i=1:nT
     
     % Update spike thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
@@ -29,12 +31,15 @@ for i=2:(nT+1)
     if (useSpikeGen)
         spikeGenSpikes = (rand(nSpikeGen,1) < spikeGenProbs);
         allSpikes = [spiked; spikeGenSpikes];
+        nGeneratedSpikes = nGeneratedSpikes + sum(spikeGenSpikes);
     else
         allSpikes = spiked;
     end
+    nSimulatedSpikes = nSimulatedSpikes + sum(spiked);
     
-    areSpikes = any(spiked); % determine if there were any spikes
-    if (areSpikes)
+    areSimSpikes = any(spiked); % determine if there were any spikes
+    areAnySpikes = any(allSpikes);
+    if (areSimSpikes)
         V(spiked) = Vreset(spiked); % reset membrane voltages
         Vth(spiked) = Vth_max(spiked); % set spike threshold to max
     end
@@ -47,7 +52,7 @@ for i=2:(nT+1)
     GsynE = arrayfun(@plus,GsynE,dGsynEdt*dt);
     GsynI = arrayfun(@plus,GsynI,dGsynIdt*dt);
 
-    if (areSpikes)
+    if (areAnySpikes)
         dGsynE_sum = sum(dGsyn(:,e_spiked),2);
         dGsynI_sum = sum(dGsyn(:,i_spiked),2);
         GsynE = arrayfun(@plus,GsynE,dGsynE_sum);
@@ -74,13 +79,14 @@ for i=2:(nT+1)
     
     V = arrayfun(@plus,V,dVdt*dt);
     
-    if (areSpikes)
+    if (areSimSpikes)
         if (useRecord)
             fwrite(spkfid,-1,'int32');
             fwrite(spkfid,i,'int32');
             fwrite(spkfid,find(spiked(cells2record)),'int32');
         end
     end
-    
 end
+fprintf('%i simulated spikes\n',int32(nSimulatedSpikes));
+fprintf('%i generated spikes\n',int32(nGeneratedSpikes));
 end

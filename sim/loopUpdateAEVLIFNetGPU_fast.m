@@ -9,12 +9,18 @@ nSpikeGen = length(spikeGenProbs);
 useSpikeGen = (nSpikeGen > 0);
 n2record = length(cells2record);
 useRecord = (n2record > 0);
-if (spkfid == -1)
+nSimulatedSpikes = 0;
+nGeneratedSpikes = 0;
+
+% if no spike file was given, don't record any spikes
+if (spkfid < 0)
     useRecord = false;
 end
 
+% Loop through nT timepoints
 for i=2:(nT+1)
-    % Update thresholds
+    
+    % Update spike thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
     dVthdt = arrayfun(@rdivide,vth1,tau_ref);
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
@@ -27,15 +33,20 @@ for i=2:(nT+1)
     Isra = arrayfun(@plus,Isra,dIsradt*dt);
     
     spiked = (V > Vth);
+    
+    % check if any spike generators spiked
     if (useSpikeGen)
         spikeGenSpikes = (rand(nSpikeGen,1) < spikeGenProbs);
         allSpikes = [spiked; spikeGenSpikes];
+        nGeneratedSpikes = nGeneratedSpikes + sum(spikeGenSpikes);
     else
         allSpikes = spiked;
     end
+    nSimulatedSpikes = nSimulatedSpikes + sum(spiked);
     
-    areSpikes = any(spiked);
-    if (areSpikes)
+    areSimSpikes = any(spiked);
+    areAnySpikes = any(allSpikes);
+    if (areSimSpikes)
         V(spiked) = Vreset(spiked);
         Vth(spiked) = Vth_max(spiked);
         Isra(spiked) = arrayfun(@plus,Isra(spiked),b(spiked));
@@ -49,7 +60,7 @@ for i=2:(nT+1)
     GsynE = arrayfun(@plus,GsynE,dGsynEdt*dt);
     GsynI = arrayfun(@plus,GsynI,dGsynIdt*dt);
 
-    if (areSpikes)
+    if (areAnySpikes)
         dGsynE_sum = sum(dGsyn(:,e_spiked),2);
         dGsynI_sum = sum(dGsyn(:,i_spiked),2);
         GsynE = arrayfun(@plus,GsynE,dGsynE_sum);
@@ -85,4 +96,6 @@ for i=2:(nT+1)
     end
     
 end
+fprintf('%i simulated spikes\n',int32(nSimulatedSpikes));
+fprintf('%i generated spikes\n',int32(nGeneratedSpikes));
 end

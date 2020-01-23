@@ -2,7 +2,7 @@ function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,G
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
           setupAEVLIFNet(net,useGpu)
 % Total # of neurons to be simulated
-N = net.nNeurons;
+N = net.nNeurons; % total # of simulated neurons
 
 % Go through each spike generator and assign it start and end indices
 totalN = N;
@@ -13,7 +13,7 @@ for i=1:net.nSpikeGenerators
     net.spikeGeneratorInfo(i).start_ind = start_ind;
     net.spikeGeneratorInfo(i).end_ind = end_ind;
     offset = offset + N;
-    totalN = totalN + N;
+    totalN = totalN + net.SpikeGeneratorInfo(i).N;
 end
 nSpikeGen = totalN - N; % total number of poisson spike generator neurons
 
@@ -87,9 +87,8 @@ else
     std_noise = zeros(N,1);
     ecells =    zeros(totalN,1);
     icells =    zeros(totalN,1);
-    spikeGenProbs = zeros(totalN-N,1);
+    spikeGenProbs = zeros(nSpikeGen,1);
 end
-dt = 10^(floor(log10(min(tau_ref,min(tau_synE,min(tau_synI,tau_sra)))))); % auto-detect dt as 10x smaller than smallest time constant
 
 % Go through each group and add them to the ecells and icells vectors. Also
 % determine which neurons' spikes need to be recorded
@@ -158,7 +157,7 @@ for i=1:net.nGroups
     Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
     El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
-    std_noise(preStart:preEnd) = net.groupInfo(i).std_noise/sqrt(dt);
+    std_noise(preStart:preEnd) = net.groupInfo(i).std_noise;
     
     % Go through all of this groups targets and call the .genConn() method
     % of the appropriate connectionType to create the dGsyn matrix (weight
@@ -195,6 +194,15 @@ tau_synI = max(minval,tau_synI);
 Cm = max(minval,Cm);
 Gl = max(0,Gl);
 dth = max(0,dth);
-std_noise = max(0,std_noise);
+ % auto-detect dt as 10x smaller than smallest time constant
+dt = 10^(floor(log10(min(tau_ref,min(tau_synE,min(tau_synI,tau_sra))))));
+std_noise = max(0,std_noise./sqrt(dt));
 dGsyn = max(0,dGsyn);
+
+% set spike generator spike probabilities
+for i=1:net.nSpikeGenerators
+    s = net.spikeGeneratorInfo(i).start_ind - N;
+    e = net.spikeGeneratorInfo(i).end_ind - N;
+    spikeGenProbs(s:e) = net.spikeGeneratorInfo(i).firingRate*dt;
+end
 end

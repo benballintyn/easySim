@@ -83,6 +83,7 @@ classdef EVLIFnetwork < handle
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
             positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
+            nonNegativeNoInfCheck = @(x) x>= 0 && ~isinf(x);
             addRequired(p,'name',@ischar)
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
@@ -91,7 +92,7 @@ classdef EVLIFnetwork < handle
             addParameter(p,'xmax',defaultXmax,validNumCheck);
             addParameter(p,'ymin',defaultYmin,validNumCheck);
             addParameter(p,'ymax',defaultYmax,validNumCheck);
-            addParameter(p,'std_noise',default_std_noise,positiveNoInfCheck);
+            addParameter(p,'std_noise',default_std_noise,nonNegativeNoInfCheck);
             addParameter(p,'mean_V0',default_mean_V0,validNumCheck);
             addParameter(p,'std_V0',default_std_V0,validNumCheck);
             addParameter(p,'mean_Vreset',default_mean_Vreset,validNumCheck);
@@ -294,6 +295,8 @@ classdef EVLIFnetwork < handle
                                 w = obj.groupInfo(i).connectionParams{j}.(fnames{k});
                                 fprintf('    %s : \n',fnames{k})
                                 fprintf('    min : %1$10g       max : %2$10g \n',w.xrange(1),w.xrange(end))
+                            else
+                                fprintf('    %1$s : %2$f\n',fnames{k},obj.groupInfo(i).connectionParams{j}.(fnames{k}))
                             end
                         end
                     end

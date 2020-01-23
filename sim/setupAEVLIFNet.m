@@ -3,6 +3,8 @@ function [V,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,ma
           setupAEVLIFNet(net,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
+
+% Go through each spike generator and assign it start and end indices
 totalN = N;
 offset = N;
 for i=1:net.nSpikeGenerators
@@ -13,37 +15,41 @@ for i=1:net.nSpikeGenerators
     offset = offset + N;
     totalN = totalN + N;
 end
-nSpikeGen = totalN - N;
+nSpikeGen = totalN - N; % total number of poisson spike generator neurons
+
+% If using a GPU, initialize all variables as gpuArrays of single precision
+% otherwise if using the CPU use normal arrays with double precision
 if (useGpu)
     % Variables that may change with time
-    V =        gpuArray(zeros(N,1,'single'));
-    GsynE =    gpuArray(zeros(N,1,'single'));
-    GsynI =    gpuArray(zeros(N,1,'single'));
-    maxGsynE = gpuArray(zeros(N,1,'single'));
-    maxGsynI = gpuArray(zeros(N,1,'single'));
-    Iapp =     gpuArray(zeros(N,1,'single'));
-    Vth =      gpuArray(zeros(N,1,'single'));
-    VsynE =    gpuArray(ones(N,1,'single'));
-    VsynI =    gpuArray(ones(N,1,'single'));
+    V =        gpuArray(zeros(N,1,'single')); % membrane voltage
+    GsynE =    gpuArray(zeros(N,1,'single')); % total excitatory synaptic conductance
+    GsynI =    gpuArray(zeros(N,1,'single')); % total inhibitory synaptic conductance
+    maxGsynE = gpuArray(zeros(N,1,'single')); % maximum total excitatory synaptic conductance
+    maxGsynI = gpuArray(zeros(N,1,'single')); % maximum total inhibitory synaptic conductance
+    Iapp =     gpuArray(zeros(N,1,'single')); % applied current
+    Vth =      gpuArray(zeros(N,1,'single')); % spike threshold
+    VsynE =    gpuArray(ones(N,1,'single')); % Excitatory synaptic reversal potential
+    VsynI =    gpuArray(ones(N,1,'single')); % Inhibitory synaptic reversal potential
 
     % Variables that will not change with time
-    Vth0 =      gpuArray(zeros(N,1,'single'));
-    Vth_max =   gpuArray(zeros(N,1,'single'));
-    tau_ref =   gpuArray(zeros(N,1,'single'));
-    Isra =      gpuArray(zeros(N,1,'single'));
-    tau_sra =   gpuArray(zeros(N,1,'single'));
-    a =         gpuArray(zeros(N,1,'single'));
-    b =         gpuArray(zeros(N,1,'single'));
-    dGsyn =     gpuArray(zeros(N,totalN,'single'));
-    tau_synE =  gpuArray(zeros(N,1,'single'));
-    tau_synI =  gpuArray(zeros(N,1,'single'));
-    Cm  =       gpuArray(zeros(N,1,'single'));
-    Gl =        gpuArray(zeros(N,1,'single'));
-    El =        gpuArray(zeros(N,1,'single'));
-    dth =       gpuArray(zeros(N,1,'single'));
-    std_noise = gpuArray(zeros(N,1,'single'));
-    ecells =    gpuArray(zeros(totalN,1));
-    icells =    gpuArray(zeros(totalN,1));
+    Vth0 =      gpuArray(zeros(N,1,'single')); % baseline spike threshold
+    Vth_max =   gpuArray(zeros(N,1,'single')); % maximum spike threshold
+    tau_ref =   gpuArray(zeros(N,1,'single')); % refactory period time constant (for variable threshold)
+    Isra =      gpuArray(zeros(N,1,'single')); % Adaptation current
+    tau_sra =   gpuArray(zeros(N,1,'single')); % Adaptation time constant
+    a =         gpuArray(zeros(N,1,'single')); % Adaptation conductance
+    b =         gpuArray(zeros(N,1,'single')); % Adaptation current increment on spike
+    dGsyn =     gpuArray(zeros(N,totalN,'single')); % synaptic 'weight' matrix (change in synaptic conductance for presynaptic spike)
+    tau_synE =  gpuArray(zeros(N,1,'single')); % excitatory synaptic time constant
+    tau_synI =  gpuArray(zeros(N,1,'single')); % inhibitory synaptic time constant
+    Cm  =       gpuArray(zeros(N,1,'single')); % membrane capacitance
+    Gl =        gpuArray(zeros(N,1,'single')); % leak conductance
+    El =        gpuArray(zeros(N,1,'single')); % leak reversal potential
+    dth =       gpuArray(zeros(N,1,'single')); % spike generation voltage range
+    std_noise = gpuArray(zeros(N,1,'single')); % standard deviation of the noise current
+    
+    ecells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are excitatory
+    icells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are inhibitory
     if (nSpikeGen == 0)
         spikeGenProbs = [];
     else
@@ -83,6 +89,8 @@ else
 end
 dt = 10^(floor(log10(min(tau_ref,min(tau_synE,min(tau_synI,tau_sra)))))); % auto-detect dt as 10x smaller than smallest time constant
 
+% Go through each group and add them to the ecells and icells vectors. Also
+% determine which neurons' spikes need to be recorded
 cells2record = [];
 for i=1:net.nGroups
     s = net.groupInfo(i).start_ind;
@@ -105,6 +113,9 @@ if (useGpu)
 else
     cells2record = cells2record';
 end
+
+% Go through each of the spike generator groups and add them to the ecells
+% and icells vectors
 for i=1:net.nSpikeGenerators
     s = net.spikeGeneratorInfo(i).start_ind;
     e = net.spikeGeneratorInfo(i).end_ind;
@@ -146,6 +157,9 @@ for i=1:net.nGroups
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
     std_noise(preStart:preEnd) = net.groupInfo(i).std_noise/sqrt(dt);
     
+    % Go through all of this groups targets and call the .genConn() method
+    % of the appropriate connectionType to create the dGsyn matrix (weight
+    % matrix)
     targets = net.groupInfo(i).targets;
     for j=1:length(targets)
         postStart = net.groupInfo(targets(j)).start_ind;
@@ -154,6 +168,9 @@ for i=1:net.nGroups
         dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
     end
 end
+
+% Go through all of the spike generator groups and add their connections to
+% the dGsyn matrix
 for i=1:net.nSpikeGenerators
     preStart = net.spikeGeneratorInfo(i).start_ind;
     preEnd = net.spikeGeneratorInfo(i).end_ind;
@@ -164,4 +181,17 @@ for i=1:net.nSpikeGenerators
         dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
     end
 end
+
+% bound variables to required ranges
+minval= single(1e-40);
+maxGsynE = max(minval,maxGsynE);
+maxGsynI = max(minval,maxGsynI);
+tau_ref = max(minval,tau_ref);
+tau_synE = max(minval,tau_synE);
+tau_synI = max(minval,tau_synI);
+Cm = max(minval,Cm);
+Gl = max(0,Gl);
+dth = max(0,dth);
+std_noise = max(0,std_noise);
+dGsyn = max(0,dGsyn);
 end

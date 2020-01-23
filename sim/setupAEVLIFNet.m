@@ -1,6 +1,6 @@
 function [V,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-          setupAEVLIFNet(net,simobj,useGpu)
+          setupAEVLIFNet(net,useGpu)
 % Total # of neurons to be simulated
 N = net.nNeurons;
 totalN = N;
@@ -42,7 +42,6 @@ if (useGpu)
     El =        gpuArray(zeros(N,1,'single'));
     dth =       gpuArray(zeros(N,1,'single'));
     std_noise = gpuArray(zeros(N,1,'single'));
-    dt =        simobj.dt;
     ecells =    gpuArray(zeros(totalN,1));
     icells =    gpuArray(zeros(totalN,1));
     if (nSpikeGen == 0)
@@ -78,11 +77,12 @@ else
     El =        zeros(N,1);
     dth =       zeros(N,1);
     std_noise = zeros(N,1);
-    dt =        simobj.dt;
     ecells =    zeros(totalN,1);
     icells =    zeros(totalN,1);
     spikeGenProbs = zeros(totalN-N,1);
 end
+dt = 10^(floor(log10(min(tau_ref,min(tau_synE,min(tau_synI,tau_sra)))))); % auto-detect dt as 10x smaller than smallest time constant
+
 cells2record = [];
 for i=1:net.nGroups
     s = net.groupInfo(i).start_ind;

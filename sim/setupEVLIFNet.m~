@@ -22,25 +22,25 @@ if (useGpu)
     maxGsynE = gpuArray(zeros(N,1,'single'));
     maxGsynI = gpuArray(zeros(N,1,'single'));
     Iapp =     gpuArray(zeros(N,1,'single'));
-    Vth =      gpuArray(zeros(N,1,'single'));
-    VsynE =    gpuArray(ones(N,1,'single'));
-    VsynI =    gpuArray(ones(N,1,'single'));
+    Vth =  gpuArray(zeros(N,1,'single'));
+    VsynE = gpuArray(ones(N,1,'single'));
+    VsynI = gpuArray(ones(N,1,'single'));
     
     % Variables that will not change with time
-    Vth0 =      gpuArray(zeros(N,1,'single'));
-    Vth_max =   gpuArray(zeros(N,1,'single'));
-    tau_ref =   gpuArray(zeros(N,1,'single'));
-    dGsyn =     gpuArray(zeros(N,totalN,'single'));
-    tau_synE =  gpuArray(zeros(N,1,'single'));
-    tau_synI =  gpuArray(zeros(N,1,'single'));
-    Cm  =       gpuArray(zeros(N,1,'single'));
-    Gl =        gpuArray(zeros(N,1,'single'));
-    El =        gpuArray(zeros(N,1,'single'));
-    dth =       gpuArray(zeros(N,1,'single'));
+    Vth0 = gpuArray(zeros(N,1,'single'));
+    Vth_max = gpuArray(zeros(N,1,'single'));
+    tau_ref = gpuArray(zeros(N,1,'single'));
+    dGsyn = gpuArray(zeros(N,totalN,'single'));
+    tau_synE = gpuArray(zeros(N,1,'single'));
+    tau_synI = gpuArray(zeros(N,1,'single'));
+    Cm  = gpuArray(zeros(N,1,'single'));
+    Gl = gpuArray(zeros(N,1,'single'));
+    El = gpuArray(zeros(N,1,'single'));
+    dth = gpuArray(zeros(N,1,'single'));
     std_noise = gpuArray(zeros(N,1,'single'));
     
-    ecells =    gpuArray(zeros(totalN,1));
-    icells =    gpuArray(zeros(totalN,1));
+    ecells = gpuArray(zeros(totalN,1));
+    icells = gpuArray(zeros(totalN,1));
     if (nSpikeGen == 0)
         spikeGenProbs = [];
     else
@@ -48,30 +48,30 @@ if (useGpu)
     end
 else
     % Variables that may change with time
-    V =        zeros(N,1);
-    GsynE =    zeros(N,1);
-    GsynI =    zeros(N,1);
+    V = zeros(N,1);
+    GsynE = zeros(N,1);
+    GsynI = zeros(N,1);
     maxGsynE = zeros(N,1);
     maxGsynI = zeros(N,1);
-    Iapp =     zeros(N,1);
-    Vth =      zeros(N,1);
-    VsynE =    ones(N,1);
-    VsynI =    ones(N,1);
+    Iapp = zeros(N,1);
+    Vth = zeros(N,1);
+    VsynE = ones(N,1);
+    VsynI = ones(N,1);
 
     % Variables that will not change with time
-    Vth0 =          zeros(N,1);
-    Vth_max =       zeros(N,1);
-    tau_ref =       zeros(N,1);
-    dGsyn =         zeros(N,totalN);
-    tau_synE =      zeros(N,1);
-    tau_synI =      zeros(N,1);
-    Cm  =           zeros(N,1);
-    Gl =            zeros(N,1);
-    El =            zeros(N,1);
-    dth =           zeros(N,1);
-    std_noise =     zeros(N,1);
-    ecells =        zeros(totalN,1);
-    icells =        zeros(totalN,1);
+    Vth0 = zeros(N,1);
+    Vth_max = zeros(N,1);
+    tau_ref = zeros(N,1);
+    dGsyn = zeros(N,totalN);
+    tau_synE = zeros(N,1);
+    tau_synI = zeros(N,1);
+    Cm  = zeros(N,1);
+    Gl = zeros(N,1);
+    El = zeros(N,1);
+    dth = zeros(N,1);
+    std_noise = zeros(N,1);
+    ecells = zeros(totalN,1);
+    icells = zeros(totalN,1);
     spikeGenProbs = zeros(totalN-N,1);
 end
 dt = 10^(floor(log10(min(tau_ref,min(tau_synE,tau_synI))))); % auto-detect dt as 10x smaller than smallest time constant

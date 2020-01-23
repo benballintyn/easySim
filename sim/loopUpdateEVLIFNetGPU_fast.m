@@ -9,6 +9,9 @@ nSpikeGen = length(spikeGenProbs);
 useSpikeGen = (nSpikeGen > 0);
 n2record = length(cells2record);
 useRecord = (n2record > 0);
+if (spkfid == -1)
+    useRecord = false;
+end
 for i=2:(nT+1)
     % Update thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);

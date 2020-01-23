@@ -1,4 +1,4 @@
-function [V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
           setupEVLIFNet(net,useGpu)
 % Total # of neurons to be simulated
@@ -13,7 +13,7 @@ for i=1:net.nSpikeGenerators
     net.spikeGeneratorInfo(i).start_ind = start_ind;
     net.spikeGeneratorInfo(i).end_ind = end_ind;
     offset = offset + N;
-    totalN = totalN + N;
+    totalN = totalN + net.spikeGeneratorInfo(i).N;
 end
 nSpikeGen = totalN - N; % total number of poisson spike generator neurons
 
@@ -22,6 +22,7 @@ nSpikeGen = totalN - N; % total number of poisson spike generator neurons
 if (useGpu)
     % Variables that may change with time
     V =        gpuArray(zeros(N,1,'single')); % membrane voltage
+    Vreset =   gpuArray(zeros(N,1,'single')); % reset membrane voltage after spike
     GsynE =    gpuArray(zeros(N,1,'single')); % total excitatory synaptic conductance
     GsynI =    gpuArray(zeros(N,1,'single')); % total inhibitory synaptic conductance
     maxGsynE = gpuArray(zeros(N,1,'single')); % maximum total excitatory synaptic conductance
@@ -54,6 +55,7 @@ if (useGpu)
 else
     % Variables that may change with time
     V =        zeros(N,1);
+    Vreset =   zeros(N,1);
     GsynE =    zeros(N,1);
     GsynI =    zeros(N,1);
     maxGsynE = zeros(N,1);
@@ -81,7 +83,7 @@ else
 end
 
 % auto-detect dt as 10x smaller than smallest time constant
-dt = 10^(floor(log10(min(tau_ref,min(tau_synE,tau_synI)))));
+dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))));
 
 % Go through each group and add them to the ecells and icells vectors. Also
 % determine which neurons' spikes need to be recorded
@@ -132,6 +134,7 @@ for i=1:net.nGroups
     % initialize all nonzero variables for current group (V(0), Vth, VsynE, VsynI, dGref,
     % tau_ref, tau_synE, tau_synI, Cm, Gl, El, Ek, dth)
     V(preStart:preEnd) = normrnd(net.groupInfo(i).mean_V0,net.groupInfo(i).std_V0,groupN,1);
+    Vreset(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vreset,net.groupInfo(i).std_Vreset,groupN,1);
     Vth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth0,net.groupInfo(i).std_Vth0,groupN,1);
     Vth0(preStart:preEnd) = Vth(preStart:preEnd);
     Vth_max(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth_max,net.groupInfo(i).std_Vth_max,groupN,1);
@@ -165,6 +168,7 @@ end
 for i=1:net.nSpikeGenerators
     preStart = net.spikeGeneratorInfo(i).start_ind;
     preEnd = net.spikeGeneratorInfo(i).end_ind;
+    targets = net.spikeGeneratorInfo(i).targets;
     for j=1:length(net.spikeGeneratorInfo(i).targets)
         postStart = net.groupInfo(targets(j)).start_ind;
         postEnd = net.groupInfo(targets(j)).end_ind;

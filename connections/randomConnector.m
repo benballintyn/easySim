@@ -10,12 +10,16 @@ classdef randomConnector < connectionType
     end
     
     methods
-        function obj = randomConnector(preGroup,postGroup,connProb,weightDist,groupInfo)
+        function obj = randomConnector(preGroup,postGroup,connProb,weightDist,groupInfo,spikeGeneratorInfo)
             obj.preGroup = preGroup;
             obj.postGroup = postGroup;
             obj.connProb = connProb;
             obj.weightDist = weightDist;
-            obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            if (preGroup < 0)
+                obj.nPre = spikeGeneratorInfo(-preGroup).N;
+            else
+                obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            end
             obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
         end
         

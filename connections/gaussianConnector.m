@@ -20,8 +20,9 @@ classdef gaussianConnector < connectionType
     
     methods
         function obj = gaussianConnector(preGroup,postGroup,connProbFunction,weightFunction,useWrap,groupInfo)
-            %UNTITLED3 Construct an instance of this class
-            %   Detailed explanation goes here
+            if (preGroup < 0)
+                error('gaussianConnector does not support spike generator groups')
+            end
             if (groupInfo(preGroup).coordinateFrame.ID ~= groupInfo(postGroup).coordinateFrame.ID)
                 error('gaussianConnector only supports connecting groups in the same coordinate frame')
             end

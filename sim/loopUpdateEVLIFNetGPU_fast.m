@@ -1,24 +1,31 @@
-function [] = loopUpdateEVLIFNetGPU_fast(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+function [] = loopUpdateEVLIFNetGPU_fast(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
-coder.gpu.kernelfun;
+coder.gpu.kernelfun; % for code generation
 
-N = size(V,1);
-nSpikeGen = length(spikeGenProbs);
-useSpikeGen = (nSpikeGen > 0);
-n2record = length(cells2record);
-useRecord = (n2record > 0);
-if (spkfid == -1)
+N = size(V,1); % # of simulated neurons
+nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
+useSpikeGen = (nSpikeGen > 0); % determine if there are any spike generators
+n2record = length(cells2record); % # of neurons to record
+useRecord = (n2record > 0); % determine if any neurons should be recorded
+
+% if no spike file was given, don't record any spikes
+if (spkfid < 0)
     useRecord = false;
 end
+
+% Loop through nT timepoints
 for i=2:(nT+1)
-    % Update thresholds
+    
+    % Update spike thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);
     dVthdt = arrayfun(@rdivide,vth1,tau_ref);
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
     
-    spiked = (V > Vth);
+    spiked = (V > Vth); % determine simulated neurons that spiked
+    
+    % check if any spike generators spiked
     if (useSpikeGen)
         spikeGenSpikes = (rand(nSpikeGen,1) < spikeGenProbs);
         allSpikes = [spiked; spikeGenSpikes];
@@ -26,10 +33,10 @@ for i=2:(nT+1)
         allSpikes = spiked;
     end
     
-    areSpikes = any(spiked);
+    areSpikes = any(spiked); % determine if there were any spikes
     if (areSpikes)
-        V(spiked) = -.08;
-        Vth(spiked) = Vth_max(spiked);
+        V(spiked) = Vreset(spiked); % reset membrane voltages
+        Vth(spiked) = Vth_max(spiked); % set spike threshold to max
     end
     
     e_spiked = logical(allSpikes.*ecells);

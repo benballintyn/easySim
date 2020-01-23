@@ -1,4 +1,4 @@
-function [] = loopUpdateAEVLIFNetGPU_fast(V,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+function [] = loopUpdateAEVLIFNetGPU_fast(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
@@ -36,7 +36,7 @@ for i=2:(nT+1)
     
     areSpikes = any(spiked);
     if (areSpikes)
-        V(spiked) = -.08;
+        V(spiked) = Vreset(spiked);
         Vth(spiked) = Vth_max(spiked);
         Isra(spiked) = arrayfun(@plus,Isra(spiked),b(spiked));
     end

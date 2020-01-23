@@ -19,7 +19,11 @@ classdef gradientConnector < connectionType
         function obj = gradientConnector(preGroup,postGroup,connProbFunction,weightFunction,groupInfo)
             obj.preGroup = preGroup;
             obj.postGroup = postGroup;
-            obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            if (preGroup < 0)
+                obj.nPre = spikeGeneratorInfo(-preGroup).N;
+            else
+                obj.nPre = groupInfo(preGroup).end_ind - groupInfo(preGroup).start_ind + 1;
+            end
             obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
             obj.connProbFunction = connProbFunction;
             obj.weightFunction = weightFunction;

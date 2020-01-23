@@ -17,7 +17,7 @@ classdef EVLIFnetwork < handle
             obj.nNeurons = 0;
             obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
-                'std_noise',{},'mean_V0',{},'std_V0',{},'mean_Vth0',{},'std_Vth0',{},...
+                'std_noise',{},'mean_V0',{},'std_V0',{},'mean_Vreset',{},'std_Vreset',{},'mean_Vth0',{},'std_Vth0',{},...
                 'mean_Vth_max',{},'std_Vth_max',{},'mean_tau_ref',{},'std_tau_ref',{},...
                 'mean_VsynE',{},'std_VsynE',{},'mean_VsynI',{},'std_VsynI',{},...
                 'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
@@ -25,7 +25,7 @@ classdef EVLIFnetwork < handle
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
                 'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
-                'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
+                'firingRate',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
@@ -33,7 +33,7 @@ classdef EVLIFnetwork < handle
             % ordered field names
             orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
                 'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
-                'std_noise','mean_V0','std_V0','mean_Vth0','std_Vth0',...
+                'std_noise','mean_V0','std_V0','mean_Vreset','std_Vreset','mean_Vth0','std_Vth0',...
                 'mean_Vth_max','std_Vth_max','mean_tau_ref','std_tau_ref',...
                 'mean_VsynE','std_VsynE','mean_VsynI','std_VsynI',...
                 'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
@@ -51,6 +51,8 @@ classdef EVLIFnetwork < handle
             default_std_noise = 1e-12;%10e-12; % 50pA*s
             default_mean_V0 = -.07; % -70mV
             default_std_V0 = 0;
+            default_mean_Vreset = -.08; % -80mV
+            default_std_Vreset = 0;
             default_mean_Vth0 = -.05; % -50mV
             default_std_Vth0 = 0;
             default_mean_Vth_max = .2; % 200mV
@@ -92,6 +94,8 @@ classdef EVLIFnetwork < handle
             addParameter(p,'std_noise',default_std_noise,positiveNoInfCheck);
             addParameter(p,'mean_V0',default_mean_V0,validNumCheck);
             addParameter(p,'std_V0',default_std_V0,validNumCheck);
+            addParameter(p,'mean_Vreset',default_mean_Vreset,validNumCheck);
+            addParameter(p,'std_Vreset',default_std_Vreset,validNumCheck);
             addParameter(p,'mean_Vth0',default_mean_Vth0,validNumCheck);
             addParameter(p,'std_Vth0',default_std_Vth0,validNumCheck);
             addParameter(p,'mean_Vth_max',default_mean_Vth_max,validNumCheck);
@@ -180,6 +184,13 @@ classdef EVLIFnetwork < handle
             info.isExcitatory = strcmp(neuronType,'excitatory');
             info.isInhibitory = strcmp(neuronType,'inhibitory');
             info.firingRate = firingRate;
+            info.start_ind = []; % to be assigned later
+            info.end_ind = []; % to be assigned later
+            
+            % empty holders for connections
+            info.targets = [];
+            info.connections = [];
+            info.connectionParams = {};
             obj.spikeGeneratorInfo(obj.nSpikeGenerators) = info;
         end
         
@@ -190,7 +201,7 @@ classdef EVLIFnetwork < handle
             if (src_id < 0)
                 if (EVLIFnetwork.checkConnInputs(connType,connParams))
                     if (strcmp(connType,'random'))
-                        conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
+                        conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo,obj.spikeGeneratorInfo);
                     elseif (strcmp(connType,'clustered'))
                         error('SpikeGenerators do not support clustered connections')
                     elseif (strcmp(connType,'gaussian'))
@@ -198,9 +209,9 @@ classdef EVLIFnetwork < handle
                     elseif (strcmp(connType,'gradient'))
                         conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo);
                     end
-                    obj.spikeGeneratorInfo(src_id).targets = [obj.spikeGeneratorInfo(src_id).targets tgt_id];
-                    obj.spikeGeneratorInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
-                    obj.groupInfo(src_id).connectionParams{end+1} = connParams;
+                    obj.spikeGeneratorInfo(-src_id).targets = [obj.spikeGeneratorInfo(-src_id).targets tgt_id];
+                    obj.spikeGeneratorInfo(-src_id).connections = [obj.spikeGeneratorInfo(-src_id).connections conn];
+                    obj.spikeGeneratorInfo(-src_id).connectionParams{end+1} = connParams;
                 end
             else
                 if (EVLIFnetwork.checkConnInputs(connType,connParams))

@@ -38,7 +38,7 @@ net.connect(2,1,'gaussian',conn_2_1_params);
 % connect the inhibitory group (group 3) to both group 1 (with 10% connection probability) 
 % and group 2 (with 5% connection probability) using a random connectivity 
 %(with synaptic weights drawn from a uniform distribution)
-weightRange = 0:1e-12:1e-9;
+weightRange = 0:1e-12:1e-7;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
 conn_3_1_params.connProb = .1;
 conn_3_1_params.weightDistribution = uniformWeightDist;
@@ -47,18 +47,14 @@ conn_3_2_params.weightDistribution = uniformWeightDist;
 net.connect(3,1,'random',conn_3_1_params);
 net.connect(3,2,'random',conn_3_2_params);
 
-% connect the inhibitory group to itself with a random connectivity with
-% connection probability = 3%
-conn_3_3_params.connProb = .03;
-conn_3_3_params.weightDistribution = uniformWeightDist;
-net.connect(3,3,'random',conn_3_3_params);
+% connect the inhibitory group to 
 
 % Last, add an excitatory Poisson spike generator group of 100 neurons that
 % spike at 50Hz and connect it to the inhibitory group (group 3). NOTE THAT
 % SPIKE GENERATOR GROUP IDS ARE GIVEN NEGATIVE VALUES TO DISTINGUISH THEM
 % FROM SIMULATED NEURON GROUPS. THEREFORE THIS GROUP WILL RECEIVE AN ID OF
 % -1
-net.addSpikeGenerator('spikegen1',100, 'excitatory',10);
+net.addSpikeGenerator('spikegen1',100, 'excitatory',100);
 conn_spkgen_3_params = conn_3_1_params;
 conn_spkgen_3_params.connProb = .1;
 net.connect(-1,3,'random',conn_spkgen_3_params); 

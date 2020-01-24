@@ -68,6 +68,9 @@ classdef gaussianConnector < connectionType
             end
             connProb = obj.connProbFunction(distances);
             dGsynMat = (rand(size(connProb)) < connProb);
+            if (obj.preGroup == obj.postGroup)
+                dGsynMat(logical(eye(obj.nPre))) = 0;
+            end
             dGsynMat = dGsynMat.*obj.weightFunction(distances);
         end
     end

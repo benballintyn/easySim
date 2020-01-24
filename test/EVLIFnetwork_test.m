@@ -54,8 +54,9 @@ else
     allVs = zeros(net.nNeurons,nT);
 end
 %}
-[V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = setupEVLIFNet(net,simobj,useGpu);
+[V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
+          setupEVLIFNet(net,useGpu);
 
 %{
 for i=1:nT
@@ -80,9 +81,9 @@ else
     spkfid = fopen('test.bin','W');
     %noise = gpuArray((std_noise'./sqrt(dt)).*randn(nT,net.nNeurons,'single'));
     tic;
-    loopUpdateEVLIFNetGPU_fast_mex(V,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,...
-                            cells2record,nT,spkfid);
+    loopUpdateEVLIFNetGPU_fast(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                            dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
     sim_dur = toc;
     fclose(spkfid);
     disp(['loopUpdateEVLIFNetGPU_fast: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])

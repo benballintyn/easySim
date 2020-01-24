@@ -7,3 +7,11 @@ to compile optimized CUDA code to actually run the network. While more benchmark
 
 # Installation
 easySim requires a number of packages in order to utilize the GPU Coder functionality. I recommend updating MATLAB to the 2019b version and installing the 10.1 version of CUDA toolkit (this is compatible with the 2019b MATLAB). For additional installation instructions for GPU Coder please see [GPU Coder docs](https://www.mathworks.com/help/pdf_doc/gpucoder/gpucoder_gs.pdf).
+
+For CPU only use, neither CUDA nor GPU Coder are required. Only MATLAB's embedded coder is required.
+
+# Getting Started
+To get started, check out the examples in the 'test' folder. There are examples utilizing either the CPU or GPU as well as the currently supported EVLIF or AEVLIF networks.
+
+# Documentation
+There is currently no comprehensive documentation page although I intend to make one in the near future. However, there is extensive documentation within the code itself. From the MATLAB command line simply type help 'class/function name here' for in depth information about each class and function.

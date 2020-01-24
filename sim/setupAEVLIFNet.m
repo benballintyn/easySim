@@ -13,7 +13,7 @@ for i=1:net.nSpikeGenerators
     net.spikeGeneratorInfo(i).start_ind = start_ind;
     net.spikeGeneratorInfo(i).end_ind = end_ind;
     offset = offset + N;
-    totalN = totalN + net.SpikeGeneratorInfo(i).N;
+    totalN = totalN + net.spikeGeneratorInfo(i).N;
 end
 nSpikeGen = totalN - N; % total number of poisson spike generator neurons
 
@@ -176,6 +176,7 @@ end
 for i=1:net.nSpikeGenerators
     preStart = net.spikeGeneratorInfo(i).start_ind;
     preEnd = net.spikeGeneratorInfo(i).end_ind;
+    targets = net.spikeGeneratorInfo(i).targets;
     for j=1:length(net.spikeGeneratorInfo(i).targets)
         postStart = net.groupInfo(targets(j)).start_ind;
         postEnd = net.groupInfo(targets(j)).end_ind;
@@ -185,7 +186,11 @@ for i=1:net.nSpikeGenerators
 end
 
 % bound variables to required ranges
-minval= single(1e-40);
+if (useGpu)
+    minval= single(1e-40);
+else
+    minval=1e-100;
+end
 maxGsynE = max(minval,maxGsynE);
 maxGsynI = max(minval,maxGsynI);
 tau_ref = max(minval,tau_ref);

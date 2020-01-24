@@ -26,7 +26,7 @@ classdef AEVLIFnetwork < handle
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
                 'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
-                'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
+                'firingRate',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
         end
         
@@ -91,6 +91,7 @@ classdef AEVLIFnetwork < handle
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
             positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
+            nonNegativeNoInfCheck = @(x) x>= 0 && ~isinf(x);
             addRequired(p,'name',@ischar)
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
@@ -99,7 +100,7 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'xmax',defaultXmax,validNumCheck);
             addParameter(p,'ymin',defaultYmin,validNumCheck);
             addParameter(p,'ymax',defaultYmax,validNumCheck);
-            addParameter(p,'std_noise',default_std_noise,positiveNoInfCheck);
+            addParameter(p,'std_noise',default_std_noise,nonNegativeNoInfCheck);
             addParameter(p,'mean_V0',default_mean_V0,validNumCheck);
             addParameter(p,'std_V0',default_std_V0,validNumCheck);
             addParameter(p,'mean_Vreset',default_mean_Vreset,validNumCheck);
@@ -198,6 +199,13 @@ classdef AEVLIFnetwork < handle
             info.isExcitatory = strcmp(neuronType,'excitatory');
             info.isInhibitory = strcmp(neuronType,'inhibitory');
             info.firingRate = firingRate;
+            info.start_ind = []; % to be assigned later
+            info.end_ind = []; % to be assigned later
+            
+            % empty holders for connections
+            info.targets = [];
+            info.connections = [];
+            info.connectionParams = {};
             obj.spikeGeneratorInfo(obj.nSpikeGenerators) = info;
         end
         
@@ -206,9 +214,9 @@ classdef AEVLIFnetwork < handle
                 error('Cannot have a SpikeGenerator group as a connection target')
             end
             if (src_id < 0)
-                if (EVLIFnetwork.checkConnInputs(connType,connParams))
+                if (AEVLIFnetwork.checkConnInputs(connType,connParams))
                     if (strcmp(connType,'random'))
-                        conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
+                        conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo,obj.spikeGeneratorInfo);
                     elseif (strcmp(connType,'clustered'))
                         error('SpikeGenerators do not support clustered connections')
                     elseif (strcmp(connType,'gaussian'))
@@ -216,12 +224,12 @@ classdef AEVLIFnetwork < handle
                     elseif (strcmp(connType,'gradient'))
                         conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo);
                     end
-                    obj.spikeGeneratorInfo(src_id).targets = [obj.spikeGeneratorInfo(src_id).targets tgt_id];
-                    obj.spikeGeneratorInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
-                    obj.groupInfo(src_id).connectionParams{end+1} = connParams;
+                    obj.spikeGeneratorInfo(-src_id).targets = [obj.spikeGeneratorInfo(-src_id).targets tgt_id];
+                    obj.spikeGeneratorInfo(-src_id).connections = [obj.spikeGeneratorInfo(-src_id).connections conn];
+                    obj.spikeGeneratorInfo(-src_id).connectionParams{end+1} = connParams;
                 end
             else
-                if (EVLIFnetwork.checkConnInputs(connType,connParams))
+                if (AEVLIFnetwork.checkConnInputs(connType,connParams))
                     if (strcmp(connType,'random'))
                         conn=randomConnector(src_id,tgt_id,connParams.connProb,connParams.weightDistribution,obj.groupInfo);
                     elseif (strcmp(connType,'clustered'))

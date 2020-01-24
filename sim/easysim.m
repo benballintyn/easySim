@@ -104,6 +104,7 @@ else
             disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
             fclose(spkfid);
             save([p.Results.sim_dir '/net.mat'],'net','-mat')
+            save([p.Results.sim_dir '/dGsyn.mat'],'dGsyn','-mat')
     end
 end
 end

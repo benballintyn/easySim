@@ -16,7 +16,7 @@ if (spkfid < 0)
 end
 
 % Loop through nT timepoints
-for i=2:(nT+1)
+for i=1:nT
     
     % Update spike thresholds
     vth1 = arrayfun(@minus,Vth0,Vth);

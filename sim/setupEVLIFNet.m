@@ -175,7 +175,11 @@ for i=1:net.nSpikeGenerators
 end
 
 % bound variables to required ranges
-minval= single(1e-40);
+if (useGpu)
+    minval= single(1e-40);
+else
+    minval=1e-100;
+end
 maxGsynE = max(minval,maxGsynE);
 maxGsynI = max(minval,maxGsynI);
 tau_ref = max(minval,tau_ref);

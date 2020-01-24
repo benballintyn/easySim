@@ -48,7 +48,7 @@ classdef EVLIFnetwork < handle
             defaultXmax = 1;
             defaultYmin = 0;
             defaultYmax = 1;
-            default_std_noise = 1e-12;%10e-12; % 50pA*s
+            default_std_noise = 1e-12;% 1pA*s
             default_mean_V0 = -.07; % -70mV
             default_std_V0 = 0;
             default_mean_Vreset = -.08; % -80mV
@@ -67,9 +67,9 @@ classdef EVLIFnetwork < handle
             default_std_max_GsynE = 0;
             default_mean_max_GsynI = 15e-6; % 15uS
             default_std_max_GsynI = 0;
-            default_mean_tau_synE = 20e-3; % 10ms
+            default_mean_tau_synE = 20e-3; % 20ms
             default_std_tau_synE = 0;
-            default_mean_tau_synI = 10e-3; % 1ms
+            default_mean_tau_synI = 10e-3; % 10ms
             default_std_tau_synI = 0;
             default_mean_Cm = 10e-9; % 10nF/mm^2%.1e-9; % 100pF
             default_std_Cm = 0;

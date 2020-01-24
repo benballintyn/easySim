@@ -70,7 +70,7 @@ net.connect(-1,3,'random',conn_spkgen_3_params);
 ntimesteps = 100000;
 useGpu = true;
 spikefile = 'spikes.bin';
-sim_dir = 'results/EVLIFnetwork_example';
+sim_dir = 'results/EVLIFnetwork_GPU_example';
 [dt,cells2record,sim_dir] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,'spikefile',spikefile,'recompile',true);
 
 % retrieve spike data and compute firing rates

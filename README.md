@@ -1,5 +1,5 @@
 # easySim
-Simulator for network simulations of exponential-LIF neurons that utilizes MATLAB's gpuCoder
+Simulator for network simulations of LIF neuron variants that utilizes MATLAB's gpuCoder
 
 # Description
 easySim provides an easy to use Object-oriented format for creating networks of neurons. It then uses MATLAB's GPU Coder

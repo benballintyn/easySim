@@ -14,7 +14,7 @@ For CPU only use, neither CUDA nor GPU Coder are required. Only MATLAB's embedde
 To get started, check out the examples in the 'test' folder. There are examples utilizing either the CPU or GPU as well as the currently supported EVLIF or AEVLIF networks.
 
 # Documentation
-There is currently no comprehensive documentation page although I intend to make one in the near future. However, there is extensive documentation within the code itself. From the MATLAB command line simply type help 'class/function name here' for in depth information about each class and function.
+There is currently no comprehensive documentation page although I intend to make one in the near future. However, there is extensive documentation within the code itself. From the MATLAB command line simply type help 'class/function name here' for in depth information about each class and function (e.g. help EVLIFnetwork).
 
 # Planned additions
 At the moment, easySim does not support short or long-term changes in synaptic strength. The additions of synaptic facilitation and depression as well as STDP based learning rules will be added in the coming weeks/months.

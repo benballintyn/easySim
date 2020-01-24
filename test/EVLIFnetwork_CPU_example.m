@@ -1,7 +1,7 @@
 % EVLIF_example
 clear all;
 % Initialize an empty EVLIFnetwork object
-net = AEVLIFnetwork();
+net = EVLIFnetwork();
 
 % Add an excitatory group with 1000 neurons with default parameters to
 % coordinate frame 1

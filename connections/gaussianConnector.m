@@ -20,6 +20,27 @@ classdef gaussianConnector < connectionType
     
     methods
         function obj = gaussianConnector(preGroup,postGroup,connProbFunction,weightFunction,useWrap,groupInfo)
+            % This class derives from the class connectionType. It is used
+            % to connect a group of neurons to another (or the same) group.
+            % With a gaussian connection, each presynaptic neuron is
+            % connected to a postsynaptic neuron with a probability that is
+            % dependent on their distance in 2D space. Neuron groups
+            % connected by a gaussianConnector MUST be in the same
+            % coordinate frame.
+            %
+            % clusterConnector(groupID,nClusters,intraConnProb,interConnProb,intraWeightDist,interWeightDist,groupInfo)
+            %   preGroup            - ID # of presynaptic group
+            %   postGroup           - ID # of postsynaptic group
+            %   connProbFunction    - function that outputs the probability
+            %                         of connection dependent on distance
+            %   weightFunction      - function that outputs a synaptic
+            %                         weight dependent on distance
+            %   useWrap             - true or false. If true, distances
+            %                         between neurons will be computed as
+            %                         if the 2D plane the neurons lie in
+            %                         wraps around on itself.
+            %   groupInfo           - struct array from network object
+            %                         containing information about all groups
             if (preGroup < 0)
                 error('gaussianConnector does not support spike generator groups')
             end
@@ -44,6 +65,8 @@ classdef gaussianConnector < connectionType
         end
         
         function dGsynMat = genConn(obj)
+            % call this function to generate the synaptic connectivity
+            % matrix defined by this connection. 
             distances = zeros(obj.nPost,obj.nPre);
             xrng = obj.xmax - obj.xmin;
             yrng = obj.ymax - obj.ymin;

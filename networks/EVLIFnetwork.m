@@ -11,9 +11,43 @@ classdef EVLIFnetwork < handle
     
     methods
         function obj = EVLIFnetwork()
+            % This class holds all of the necessary information about an
+            % EVLIFnetwork. The E in EVLIF stands for 'exponential' and
+            % refers to the spike generation mechansim used. the V in EVLIF
+            % refers to the fact that the refractory period is modeled by
+            % instantaneously increasing the spike threshold after a spike
+            % (making it more difficult to spike again). This increased
+            % threshold decays back to baseline with some time constant.
+            % LIF stands for the standard leaky-integrate-and-fire model
+            % neuron.
+            %
+            % METHODS:
+            %   addGroup(name,N,neuronType,coordinateFrame,varargin)
+            %       - add a neuron group to be simulated.
+            %         Type help EVLIFnetwork.addGroup for more info
+            %
+            %   addSpikeGenerator(name,N,neuronType,firingRate)
+            %       - add a Poisson spike generator group.
+            %         Type help EVLIFnetwork.addSpikeGenerator for more
+            %         info
+            %
+            %   connect(src_id,tgt_id,connType,connParams)
+            %       - connect 2 neuron groups using a connType connection.
+            %         This can be used to connect a neuron group to itself
+            %         or to another group. It can also be used to connect a
+            %         spikeGenerator group to a neuron group. Check the
+            %         different connectionTypes to see which can be used in
+            %         which situation.
+            %         Type help EVLIFnetwork.connect for more info
+            %
+            %   print(verbose)
+            %       - This prints out information about the network.
+            %         Calling net.print() or net.print(false) will print a
+            %         short description of the network. Calling
+            %         net.print(true) will print a much longer description
+            %         of the network with each group's parameter sets.
             obj.nGroups = 0;
             obj.nSpikeGenerators = 0;
-            %obj.groupInfo = struct(
             obj.nNeurons = 0;
             obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
@@ -30,6 +64,114 @@ classdef EVLIFnetwork < handle
         end
         
         function addGroup(obj,name,N,neuronType,coordinateFrame,varargin)
+            % addGroup(name,N,neuronType,coordinateFrame,varargin)
+            %   name            - string name of the group. Note, this string
+            %                     is not used internally to identify the group
+            %                     so it may be whatever the user likes.
+            %
+            %   N               - # of neurons in the group
+            %
+            %   neuronType      - either 'excitatory' or 'inhibitory'
+            %
+            %   coordinateFrame - ID # of the coordinate frame in which
+            %                     this neuron group will reside
+            %
+            %   varargin        - there are many optional parameters that
+            %                     the user may supply to customize the 
+            %                     neuron group. They must be provided as 
+            %                     key-value pairs e.g.
+            %
+            %     addGroup(name,N,neuronType,coordinateFrame,'mean_V0',-.06)
+            %       where 'mean_V0' is the parameter for the mean initial 
+            %       membrane potential and -.06 (-60mV) is the provided
+            %       value. Each parameter governing a neuron group's
+            %       behavior is given a mean and standard deviation from
+            %       which the values for individual neurons will be chosen.
+            %     
+            %     Full list of optional parameters:
+            %       1. 'std_noise'      - standard deviation of noise currents
+            %       2. 'mean_V0'        - mean initial membrane voltage value
+            %       3. 'std_V0'         - standard deviation of the initial
+            %                             membrane voltage values
+            %       4. 'mean_Vreset'    - mean membrane reset voltage
+            %                             following a spike
+            %       5. 'std_Vreset'     - standard deviation of the membrane
+            %                             reset voltages following a spike
+            %       6. 'mean_Vth0'      - mean baseline spike threshold
+            %       7. 'std_Vth0'       - standard deviation of baseline spike
+            %                             threshold
+            %       8. 'mean_Vth_max'   - mean maximum threshold value. A
+            %                             neuron's spike threshold will be 
+            %                             set to this value following a spike
+            %       9. 'std_Vth_max'    - standard deviation of the maximum
+            %                             threshold value
+            %      10. 'mean_tau_ref'   - mean refractory period time
+            %                             constant
+            %      11. 'std_tau_ref'    - standard deviation of the
+            %                             refractory period time constant
+            %      12. 'mean_VsynE'     - mean excitatory synaptic reversal
+            %                             potential
+            %      13. 'std_VsynE'      - standard deviation of the
+            %                             excitatory synaptic reversal potential
+            %      14. 'mean_VsynI'     - mean inhibitory synaptic reversal
+            %                             potential
+            %      15. 'std_VsynI'      - standard deviation of the
+            %                             inhibitory synaptic reversal
+            %                             potential
+            %      16. 'mean_max_GsynE' - mean maximum total excitatory
+            %                             synaptic conductance
+            %      17. 'std_max_GsynE'  - standard deviation of the maximum
+            %                             total excitatory synaptic
+            %                             conductance
+            %      18. 'mean_max_GsynI' - mean maximum total inhibitory
+            %                             synaptic conductance
+            %      19. 'std_max_GsynI'  - standard deviation of the maximum
+            %                             total inhibitory synaptic
+            %                             conductance
+            %      20. 'mean_tau_synE'  - mean excitatory synaptic time
+            %                             constant
+            %      21. 'std_tau_synE'   - standard deviation of the
+            %                             excitatory synaptic time constants
+            %      22. 'mean_tau_synI'  - mean inhibitory synaptic time
+            %                             constant
+            %      22. 'std_tau_synI'   - standard deviation of the
+            %                             inhibitory synaptic time constants
+            %      23. 'mean_Cm'        - mean membrane capacitance
+            %      24. 'std_Cm'         - standard devation of membrane
+            %                             capacitances
+            %      25. 'mean_Gl'        - mean leak conductance
+            %      26. 'std_Gl'         - standard deviation of leak
+            %                             conductances
+            %      27. 'mean_El'        - mean leak reversal potential
+            %      28. 'std_El'         - standard deviation in leak
+            %                             reversal potentials
+            %      29. 'mean_dth'       - mean spike generation voltage range
+            %      30. 'std_dth'        - standard deviation of the spike
+            %                             generation voltage range
+            %      31. 'record'         - can be true or false. Indicates
+            %                             whether to record this groups spike
+            %                             times to a file or not
+            %      32. 'xmin'           - minimum x-value of the coordinate
+            %                             frame this group lies in. NOTE:
+            %                             If using this optional parameter,
+            %                             this neuron group must be the
+            %                             first in this coordinate frame
+            %      33. 'xmax'           - maximum x-value of the coordinate
+            %                             frame this group lies in. NOTE:
+            %                             If using this optional parameter,
+            %                             this neuron group must be the
+            %                             first in this coordinate frame
+            %      32. 'ymin'           - minimum y-value of the coordinate
+            %                             frame this group lies in. NOTE:
+            %                             If using this optional parameter,
+            %                             this neuron group must be the
+            %                             first in this coordinate frame
+            %      33. 'ymax'           - maximum y-value of the coordinate
+            %                             frame this group lies in. NOTE:
+            %                             If using this optional parameter,
+            %                             this neuron group must be the
+            %                             first in this coordinate frame
+            
             % ordered field names
             orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
                 'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
@@ -177,6 +319,14 @@ classdef EVLIFnetwork < handle
         end
         
         function addSpikeGenerator(obj,name,N,neuronType,firingRate)
+            % addSpikeGenerator(name,N,neuronType,firingRate)
+            %   name       - string name for this spikeGenerator group
+            %
+            %   N          - # of neurons in this spikeGenerator group
+            %
+            %   neuronType - 'excitatory' or 'inhibitory'
+            %
+            %   firingRate - firing rate of this group in Hz
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
             info.id = -obj.nSpikeGenerators;
             info.name = name;
@@ -196,6 +346,66 @@ classdef EVLIFnetwork < handle
         end
         
         function connect(obj,src_id,tgt_id,connType,connParams)
+            % connect(src_id,tgt_id,connType,connParams)
+            %   src_id  - ID # of presynaptic group
+            %
+            %   tgt_id  - ID # of postsynaptic group
+            %
+            %   connType - 'random', 'clustered', 'gaussian', or 'gradient'
+            %
+            %   connParams - structure containing the necessary inputs to
+            %                build the connection object. Different
+            %                connection types require different inputs.
+            %                These are listed below.
+            %       connParams by connType:
+            %       'random':
+            %           connParams.connProb - connection probability
+            %           connParams.weightDistribution - weightDistribution
+            %                                           object
+            %       'clustered':
+            %           connParams.nClusters - # of clusters to split the
+            %                                  neuron group into
+            %           connParams.intraConnProb - connection probability
+            %                                      within a cluster
+            %           connParams.interConnProb - connection probability
+            %                                      between clusters
+            %           connParams.intraWeightDist - weightDistribution
+            %                                        object for
+            %                                        intra-cluster
+            %                                        connections
+            %           connParams.interWeightDist - weightDistribution
+            %                                        object for
+            %                                        inter-cluster
+            %                                        connections
+            %       'gaussian':
+            %           connParams.connProbFunction - function that takes
+            %                                         as input a distance
+            %                                         and returns a
+            %                                         connection
+            %                                         probability
+            %           connParams.weightFunction - function that takes as
+            %                                       input a distance and
+            %                                       returns a synaptic
+            %                                       weight
+            %           connParams.useWrap - true or false. If true, when
+            %                                calculating the distances
+            %                                between neurons, the wrap
+            %                                distance (distance as if the
+            %                                coordinate frame wrapped
+            %                                around on itself) is used.
+            %       'gradient':
+            %           connParams.connProbFunction - function that takes
+            %                                         as input the
+            %                                         post-synaptic
+            %                                         x-coordinate
+            %                                         and returns a
+            %                                         connection
+            %                                         probability
+            %           connParams.weightFunction - function that takes as
+            %                                       input the post-synaptic
+            %                                       x-coordinate and
+            %                                       returns a synaptic
+            %                                       weight
             if (tgt_id < 0)
                 error('Cannot have a SpikeGenerator group as a connection target')
             end

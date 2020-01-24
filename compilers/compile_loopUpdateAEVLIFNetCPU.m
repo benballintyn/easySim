@@ -1,4 +1,6 @@
 function [] = compile_loopUpdateAEVLIFNetCPU()
+% This function uses MATLAB's embedded coder to create a mex file
+% loopUpdateAEVLIFNetCPU_mex for faster simulation on the CPU
 maxN = 100000;
 maxSpikeGen = 100000;
 %% Define argument types for entry-point 'loopUpdateAEVLIFNetGPU_fast'.

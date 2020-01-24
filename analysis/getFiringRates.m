@@ -16,7 +16,9 @@ function [frs] = getFiringRates(spikeData,cells2record,nTimesteps,dt,downsampleF
 %
 %       dt               - timestep size used in the simulation
 %
-%       downsampleFactor - factor by which to downsample time
+%       downsampleFactor - factor by which to downsample time. e.g. if
+%                          nTimesteps is 10,000 and downsampleFactor is 10,
+%                          the output frs will have 1,000 time points
 %
 %       window           - factor controlling how much spikes are smoothed
 %

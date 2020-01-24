@@ -1,6 +1,18 @@
 function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
           setupEVLIFNet(net,useGpu)
+% This function initializes all of the relevant variables for simulation
+% based based on whether a GPU will be used to do the simulation or not.
+% The output of this function should be fed directly into one of the
+% simulation functions (e.g. loopUpdateEVLIFNetGPU_fast)
+% setupEVLIFNet(net,useGpu)
+%   INPUTS:
+%       net     - network object (e.g. EVLIFnetwork)
+%
+%       useGpu  - true or false. If true, variables will be initialized as
+%                 gpuArrays with single precision. If false, variables will
+%                 be normal arrays with double precision.
+
 % Total # of neurons to be simulated
 N = net.nNeurons; % total # of simulated neurons
 

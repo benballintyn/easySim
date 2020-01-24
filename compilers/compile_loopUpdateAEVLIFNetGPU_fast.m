@@ -1,4 +1,16 @@
 function [] = compile_loopUpdateAEVLIFNetGPU_fast(N,nSpikeGenCells,nCells2record)
+% This function compiles the loopUpdateAEVLIFNetGPU_fast function into CUDA
+% code and produces a mex file loopUpdateAEVLIFNetGPU_fast_mex to run a
+% simulation on the GPU.
+% compile_loopUpdateAEVLIFNetGPU_fast(N,nSpikeGenCells,nCells2record)
+%   INPUTS:
+%       N              - # of simulated neurons in the network to be simulated
+%
+%       nSpikeGenCells - # of Poisson spike generator neurons in the
+%                        network to be simulated
+%
+%       nCells2record  - # of cells whose spike times will be written to
+%                        file
 cfg = coder.gpuConfig('mex');
 cfg.InitFltsAndDblsToZero = false;
 cfg.GenerateReport = true;

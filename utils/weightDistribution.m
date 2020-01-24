@@ -1,6 +1,4 @@
 classdef weightDistribution < handle
-    %UNTITLED4 Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         xrange
@@ -9,8 +7,23 @@ classdef weightDistribution < handle
     
     methods
         function obj = weightDistribution(xrange,px)
-            %UNTITLED4 Construct an instance of this class
-            %   Detailed explanation goes here
+            % This is a simple class to represent a probability
+            % distribution over some range of values. This can be used to
+            % represent an arbitrary distribution since the probabilities
+            % of each value are inputs.
+            %
+            % weightDistribution(xrange,px)
+            %   xrange - vector of values representing the domain of the
+            %            probability distribution
+            %   px     - must be the same length as xrange. Each value
+            %            px(i) gives the associated probability density to
+            %            the value xrange(i).
+            %
+            %   METHODS:
+            %       genSample(sampleSize)
+            %           - samples from the distribution and returns the
+            %             samples in a matrix of size sampleSize.
+            
             if (length(xrange) ~= length(px))
                 error('xrange and px are of different lengths')
             else

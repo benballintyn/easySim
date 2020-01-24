@@ -1,5 +1,39 @@
 function [dt,cells2record,sim_dir] = easysim(net,nT,useGpu,varargin)
-
+% easysim(net,nT,useGpu,varargin)
+%   This function funnels that input network to the correct simulation
+%   function, recompiling code as requested. It also opens and closes the
+%   files in which spike times are saved and also saves the connection
+%   matrix used in the simulation.
+%
+%   net      - network object (e.g. EVLIFnetwork or AEVLIFnetwork)
+%
+%   nT       - # of timesteps to simulate
+%
+%   useGpu   - true or false. If true, easysim will attempt to simulate the
+%              network on a GPU using compiled CUDA code
+%
+%   varargin - There are a few optional inputs that control if and where
+%              spike times are recorded as well as whether the simulation
+%              code should be recompiled. Each optional input must be
+%              specified as a key-value pair
+%              e.g.
+%              easysim(net,nT,useGpu,'recompile',true,'spikefile','myspikes.bin')
+%
+%               The optional parameters are:
+%                   1. 'sim_dir'   - path to directory in which to save simulation
+%                                  data. The default is ./tmp
+%                   2. 'spikefile' - filename in which spike times will be
+%                                    stored.
+%                   3. 'recompile' - true or false. If true, easysim will
+%                                    call the relevant compilation
+%                                    functions to recompile the simulation
+%                                    code to be appropriate for the current
+%                                    network. NOTE: you will need to do
+%                                    this anytime you are using the GPU and
+%                                    the # of neurons, spikeGenerating
+%                                    neurons, or # of cells to be recorded
+%                                    has changed from the last call to
+%                                    easysim.
 p=inputParser;
 isNetwork = @(x) isa(net,'EVLIFnetwork') || isa(net,'AEVLIFnetwork');
 isPositiveNumber = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x) && (x>0);

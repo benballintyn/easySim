@@ -210,7 +210,7 @@ classdef AEVLIFnetwork < handle
             defaultXmax = 1;
             defaultYmin = 0;
             defaultYmax = 1;
-            default_std_noise = 1e-12;%10e-12; % 50pA*s
+            default_std_noise = 50e-12; % 50pA*s
             default_mean_V0 = -.07; % -70mV
             default_std_V0 = 0;
             default_mean_Vreset = -.08; % -80mV
@@ -239,9 +239,9 @@ classdef AEVLIFnetwork < handle
             default_std_tau_synE = 0;
             default_mean_tau_synI = 10e-3; % 1ms
             default_std_tau_synI = 0;
-            default_mean_Cm = 10e-9; % 10nF/mm^2%.1e-9; % 100pF
+            default_mean_Cm = 10e-9; % 10nF/mm^2 (Dayan & Abbott) .9e-6; %.uF/cm^2 (Gentet et al., 2000)
             default_std_Cm = 0;
-            default_mean_Gl = 1e-6; % 1/(1Mohm*mm^2) %10e-9; % 10nS
+            default_mean_Gl = 1e-6; % 1uS/mm^2 (Dayan & Abbott)
             default_std_Gl = 0;
             default_mean_El = -.07; % -70mV
             default_std_El = 0;
@@ -519,6 +519,8 @@ classdef AEVLIFnetwork < handle
                     for j=1:length(fnames)
                         if (contains(fnames{j},'mean'))
                             fprintf('%1$15s = %2$10g    %3$15s = %4$10g \n',fnames{j},obj.groupInfo(i).(fnames{j}),fnames{j+1},obj.groupInfo(i).(fnames{j+1}))
+                        elseif (contains(fnames{j},'noise'))
+                            fprintf('%1$15s = %2$10g \n',fnames{j},obj.groupInfo(i).(fnames{j}));
                         end
                     end
                     fprintf('____________________________________________\n')

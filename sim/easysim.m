@@ -1,4 +1,4 @@
-function [dt,cells2record,sim_dir] = easysim(net,nT,useGpu,varargin)
+function [dt,cells2record,sim_dir,recordV,recordVth,iappRecord] = easysim(net,nT,useGpu,varargin)
 % easysim(net,nT,useGpu,varargin)
 %   This function funnels that input network to the correct simulation
 %   function, recompiling code as requested. It also opens and closes the
@@ -43,6 +43,7 @@ addRequired(p,'useGpu',@islogical)
 addParameter(p,'sim_dir','tmp',@ischar)
 addParameter(p,'spikefile','',@ischar)
 addParameter(p,'recompile',false,@islogical)
+addParameter(p,'recordVars',false,@islogical)
 parse(p,net,nT,useGpu,varargin{:})
 
 if (~isempty(p.Results.sim_dir))
@@ -105,16 +106,30 @@ else
               setupEVLIFNet(net,useGpu);
 
             if (p.Results.recompile)
-                compile_loopUpdateEVLIFNetCPU();
+                if (p.Results.recordVars)
+                    compile_loopUpdateEVLIFNetCPU_recordVars();
+                else
+                    compile_loopUpdateEVLIFNetCPU();
+                end
             end
 
             spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            fprintf('Calling loopUpdateEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-            tic;
-            loopUpdateEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                                dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                                dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-            t=toc;
+            
+            if (p.Results.recordVars)
+                fprintf('Calling loopUpdateEVLIFNetCPU_recordV_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                tic;
+                [recordV,recordVth,iappRecord]=loopUpdateEVLIFNetCPU_recordVars_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                                    dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
+                t=toc;
+            else
+                fprintf('Calling loopUpdateEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                tic;
+                loopUpdateEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                                    dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
+                t=toc;
+            end
             disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
             fclose(spkfid);
             save([p.Results.sim_dir '/net.mat'],'net','-mat')
@@ -125,16 +140,30 @@ else
               setupAEVLIFNet(net,useGpu);
 
             if (p.Results.recompile)
-                compile_loopUpdateAEVLIFNetCPU();
+                if (p.Results.recordVars)
+                    compile_loopUpdateAEVLIFNetCPU_recordVars();
+                else
+                    compile_loopUpdateAEVLIFNetCPU();
+                end
             end
 
             spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            fprintf('Calling loopUpdateAEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-            tic;
-            loopUpdateAEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                                dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                                dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-            t=toc;
+            
+            if (p.Results.recordVars)
+                fprintf('Calling loopUpdateAEVLIFNetCPU_recordV_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                tic;
+                [recordV,recordVth,iappRecord]=loopUpdateAEVLIFNetCPU_recordVars_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                                    dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
+                t=toc;
+            else
+                fprintf('Calling loopUpdateAEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                tic;
+                loopUpdateAEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                                    dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
+                t=toc;
+            end
             disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
             fclose(spkfid);
             save([p.Results.sim_dir '/net.mat'],'net','-mat')

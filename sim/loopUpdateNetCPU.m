@@ -94,7 +94,7 @@ for i=1:nT
     dVdt = arrayfun(@times,f1,f13);
     %}
     V = V + dVdt*dt;
-    
+    V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
     allVs(:,i) = V;
     allSpikes(:,i) = spiked;
     if (mod(i,1000)==0)

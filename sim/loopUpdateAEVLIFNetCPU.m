@@ -68,7 +68,9 @@ for i=1:nT
     end
     
     Isyn = arrayfun(@plus,arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)),arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V)));
-    Iapp = arrayfun(@plus,Iapp,arrayfun(@times,std_noise,randn(N,1)));
+    
+    curIapp = Iapp;
+    curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
     
     f1 = (1./Cm);
     f2 = arrayfun(@minus,El,V);
@@ -79,12 +81,12 @@ for i=1:nT
     f7 = arrayfun(@plus,f2,f6);
     f8 = arrayfun(@times,Gl,f7);
     f9 = arrayfun(@plus,f8,Isyn);
-    f10 = arrayfun(@plus,f9,Iapp);
+    f10 = arrayfun(@plus,f9,curIapp);
     f11 = arrayfun(@minus,f10,Isra);
     dVdt = arrayfun(@times,f1,f11);
     
     V = arrayfun(@plus,V,dVdt*dt);
-    
+    V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
     if (areSimSpikes)
         if (useRecord)
             fwrite(spkfid,-1,'int32');

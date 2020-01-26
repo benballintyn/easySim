@@ -1,4 +1,4 @@
-function [] = loopUpdateEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+function [vRecord,vthRecord,iappRecord] = loopUpdateEVLIFNetCPU_recordVars(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
@@ -9,6 +9,9 @@ n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
+vRecord = zeros(N,nT);
+vthRecord = zeros(N,nT);
+iappRecord = zeros(N,nT);
 
 % if no spike file was given, don't record any spikes
 if (spkfid < 0)
@@ -22,6 +25,7 @@ for i=1:nT
     vth1 = arrayfun(@minus,Vth0,Vth);
     dVthdt = arrayfun(@rdivide,vth1,tau_ref);
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
+    vthRecord(:,i) = Vth;
     
     spiked = (V > Vth); % determine simulated neurons that spiked
     
@@ -63,6 +67,8 @@ for i=1:nT
     
     curIapp = Iapp;
     curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
+    iappRecord(:,i) = curIapp;
+    %Iapp = arrayfun(@plus,Iapp,normrnd(0,std_noise));
     
     f1 = (1./Cm);
     f2 = arrayfun(@minus,El,V);
@@ -78,6 +84,7 @@ for i=1:nT
     
     V = arrayfun(@plus,V,dVdt*dt);
     V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
+    vRecord(:,i) = V;
     if (areSimSpikes)
         if (useRecord)
             fwrite(spkfid,-1,'int32');

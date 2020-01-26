@@ -1,14 +1,17 @@
-function [] = loopUpdateEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+function [vRecord,vthRecord,iappRecord] = loopUpdateAEVLIFNetCPU_recordVars(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
-N = size(V,1); % # of simulated neurons
-nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
-useSpikeGen = (nSpikeGen > 0); % determine if there are any spike generators
-n2record = length(cells2record); % # of neurons to record
-useRecord = (n2record > 0); % determine if any neurons should be recorded
+N = size(V,1);
+nSpikeGen = length(spikeGenProbs);
+useSpikeGen = (nSpikeGen > 0);
+n2record = length(cells2record);
+useRecord = (n2record > 0);
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
+vRecord = zeros(N,nT);
+vthRecord = zeros(N,nT);
+iappRecord = zeros(N,nT);
 
 % if no spike file was given, don't record any spikes
 if (spkfid < 0)
@@ -22,8 +25,16 @@ for i=1:nT
     vth1 = arrayfun(@minus,Vth0,Vth);
     dVthdt = arrayfun(@rdivide,vth1,tau_ref);
     Vth = arrayfun(@plus,Vth,dVthdt*dt);
+    vthRecord(:,i) = Vth;
     
-    spiked = (V > Vth); % determine simulated neurons that spiked
+    % Update adaptation currents
+    sra1 = arrayfun(@minus,V,El);
+    sra2 = arrayfun(@times,a,sra1);
+    sra3 = arrayfun(@minus,sra2,Isra);
+    dIsradt = arrayfun(@rdivide,sra3,tau_sra);
+    Isra = arrayfun(@plus,Isra,dIsradt*dt);
+    
+    spiked = (V > Vth);
     
     % check if any spike generators spiked
     if (useSpikeGen)
@@ -35,11 +46,12 @@ for i=1:nT
     end
     nSimulatedSpikes = nSimulatedSpikes + sum(spiked);
     
-    areSimSpikes = any(spiked); % determine if there were any spikes
+    areSimSpikes = any(spiked);
     areAnySpikes = any(allSpikes);
     if (areSimSpikes)
-        V(spiked) = Vreset(spiked); % reset membrane voltages
-        Vth(spiked) = Vth_max(spiked); % set spike threshold to max
+        V(spiked) = Vreset(spiked);
+        Vth(spiked) = Vth_max(spiked);
+        Isra(spiked) = arrayfun(@plus,Isra(spiked),b(spiked));
     end
     
     e_spiked = logical(allSpikes.*ecells);
@@ -63,6 +75,7 @@ for i=1:nT
     
     curIapp = Iapp;
     curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
+    iappRecord(:,i) = curIapp;
     
     f1 = (1./Cm);
     f2 = arrayfun(@minus,El,V);
@@ -74,10 +87,12 @@ for i=1:nT
     f8 = arrayfun(@times,Gl,f7);
     f9 = arrayfun(@plus,f8,Isyn);
     f10 = arrayfun(@plus,f9,curIapp);
-    dVdt = arrayfun(@times,f1,f10);
+    f11 = arrayfun(@minus,f10,Isra);
+    dVdt = arrayfun(@times,f1,f11);
     
     V = arrayfun(@plus,V,dVdt*dt);
     V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
+    vRecord(:,i) = V;
     if (areSimSpikes)
         if (useRecord)
             fwrite(spkfid,-1,'int32');
@@ -85,6 +100,7 @@ for i=1:nT
             fwrite(spkfid,find(spiked(cells2record)),'int32');
         end
     end
+    
 end
 fprintf('%i simulated spikes\n',int32(nSimulatedSpikes));
 fprintf('%i generated spikes\n',int32(nGeneratedSpikes));

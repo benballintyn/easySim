@@ -73,7 +73,8 @@ for i=1:nT
     Isyn = arrayfun(@plus,arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)),arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V)));
     
     % add noise to any input currents
-    Iapp = arrayfun(@plus,Iapp,arrayfun(@times,std_noise,randn(N,1)));
+    curIapp = Iapp;
+    curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
     
     f1 = (1./Cm); % (1./Cm)
     f2 = arrayfun(@minus,El,V); % (El - V)
@@ -84,12 +85,12 @@ for i=1:nT
     f7 = arrayfun(@plus,f2,f6); % (El - V) + dth.*exp((V - Vth)./dth)
     f8 = arrayfun(@times,Gl,f7); % Gl.*[(El - V) + dth.*exp((V - Vth)./dth)]
     f9 = arrayfun(@plus,f8,Isyn); % Gl.*[(El - V) + dth.*exp((V - Vth)./dth)] + Isyn
-    f10 = arrayfun(@plus,f9,Iapp); % Gl.*[(El - V) + dth.*exp((V - Vth)./dth)] + Isyn + Iapp
+    f10 = arrayfun(@plus,f9,curIapp); % Gl.*[(El - V) + dth.*exp((V - Vth)./dth)] + Isyn + Iapp
     f11 = arrayfun(@minus,f10,Isra); % Gl.*[(El - V) + dth.*exp((V - Vth)./dth)] + Isyn + Iapp - Isra
     dVdt = arrayfun(@times,f1,f11); % (1./Cm).*(Gl.*[(El - V) + dth.*exp((V - Vth)./dth)] + Isyn + Iapp - Isra)
     
     V = arrayfun(@plus,V,dVdt*dt); % V = V + dVdt*dt
-    
+    V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
     % if there are any spikes from SIMULATED neurons, write them to file
     if (areSimSpikes)
         if (useRecord)

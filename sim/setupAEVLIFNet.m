@@ -214,7 +214,7 @@ dth = max(0,dth);
  % auto-detect dt as 10x smaller than smallest time constant
 min_tau = min(min(tau_ref),min(min(tau_synE),min(min(tau_synI),min(tau_sra))));
 dt = gather(10^(floor(log10(min_tau/10))));
-std_noise = max(0,std_noise./sqrt(dt));
+std_noise = max(0,std_noise)./sqrt(dt);
 dGsyn = max(0,dGsyn);
 
 % set spike generator spike probabilities

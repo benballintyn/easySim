@@ -55,4 +55,5 @@ f10 = arrayfun(@plus,f9,Iapp);
 dVdt = arrayfun(@times,f1,f10);
 
 V = arrayfun(@plus,V,dVdt*dt);
+V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
 end

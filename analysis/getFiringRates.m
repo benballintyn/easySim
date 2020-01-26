@@ -1,4 +1,4 @@
-function [frs] = getFiringRates(spikeData,cells2record,nTimesteps,dt,downsampleFactor,window)
+function [frs] = getFiringRates(spikeData,nNeurons,nTimesteps,dt,downsampleFactor,window,varargin)
 % This function takes in the spike data form readSpikes as well as
 % additional parameters to convert the spike times into continuous firing
 % rate traces. It does this by using the alpha function method from Dayan &
@@ -26,16 +26,38 @@ function [frs] = getFiringRates(spikeData,cells2record,nTimesteps,dt,downsampleF
 %       frs - (nTimesteps/downsampleFactor) x length(cells2record) matrix
 %             of firing rates. Rows give timepoints and columns give
 %             individual neurons
-nNeurons = length(cells2record);
+nonNegativeNoInfCheck = @(x) x>= 0 && ~isinf(x);
+greaterThanOneNoInfCheck = @(x) x>= 1 && ~isinf(x);
+p=inputParser;
+addRequired(p,'spikeData',@isnumeric);
+addRequired(p,'nNeurons',nonNegativeNoInfCheck);
+addRequired(p,'nTimesteps',nonNegativeNoInfCheck);
+addRequired(p,'dt',nonNegativeNoInfCheck);
+addRequired(p,'downsampleFactor',greaterThanOneNoInfCheck);
+addRequired(p,'window',greaterThanOneNoInfCheck);
+addParameter(p,'filter_type','alpha',@ischar);
+parse(p,spikeData,nNeurons,nTimesteps,dt,downsampleFactor,window,varargin{:});
+
 frs = zeros(nNeurons,nTimesteps);
 if (isempty(spikeData))
     frs = downsample(frs',downsampleFactor);
     return
 end
-alpha=1/window;
-tau=-1000:1:1000;
-w=(alpha^2)*tau.*exp(-alpha*tau); %alpha function
-w(w<0) = 0;
+tau=(-10000*dt):dt:(10000*dt);
+if (strcmp(p.Results.filter_type,'alpha'))
+    alpha=1/(window*dt);
+    w=(alpha^2)*tau.*exp(-alpha*tau); %alpha function
+    w(w<0) = 0;
+elseif (strcmp(p.Results.filter_type,'gaussian'))
+    sigma = window*dt;
+    w = (1/(sqrt(2*pi)*sigma))*exp(-(tau.^2./(2*sigma.^2)));
+    %w = w./max(w);
+elseif (strcmp(p.Results.filter_type,'rectangular'))
+    w = zeros(1,length(tau));
+    midPt = ceil(length(tau)/2);
+    w(floor(midPt-window/2):ceil(midPt+window/2)) = (1/(window*dt));
+    %w = w./max(w);
+end
 
 for i=1:nNeurons
     curSpikeTimes = spikeData((spikeData(:,2) == i),1);
@@ -44,7 +66,5 @@ for i=1:nNeurons
     frs(i,:) = conv(spikes,w,'same');
 end
 frs = downsample(frs',downsampleFactor);
-frs = frs./dt;
-
 end
 

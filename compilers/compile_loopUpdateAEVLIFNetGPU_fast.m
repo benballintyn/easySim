@@ -35,7 +35,7 @@ ARGS{1}{13} = coder.typeof(single(0),[N   1],'Gpu',true); % GsynE
 ARGS{1}{14} = coder.typeof(single(0),[N   1],'Gpu',true); % GsynI
 ARGS{1}{15} = coder.typeof(single(0),[N   1],'Gpu',true); % maxGsynE
 ARGS{1}{16} = coder.typeof(single(0),[N   1],'Gpu',true); % maxGsynI
-ARGS{1}{17} = coder.typeof(single(0),[N N],'Gpu',true); % dGsyn
+ARGS{1}{17} = coder.typeof(single(0),[N N+nSpikeGenCells],'Gpu',true); % dGsyn
 ARGS{1}{18} = coder.typeof(single(0),[N   1],'Gpu',true); % tau_synE
 ARGS{1}{19} = coder.typeof(single(0),[N   1],'Gpu',true); % tau_synI
 ARGS{1}{20} = coder.typeof(single(0),[N   1],'Gpu',true); % Cm
@@ -45,8 +45,8 @@ ARGS{1}{23} = coder.typeof(single(0),[N   1],'Gpu',true); % dth
 ARGS{1}{24} = coder.typeof(single(0),[N   1],'Gpu',true); % Iapp
 ARGS{1}{25} = coder.typeof(single(0),[N  1],'Gpu',true); % std_noise
 ARGS{1}{26} = coder.typeof(single(0)); % dt
-ARGS{1}{27} = coder.typeof(false,[N   1],'Gpu',true); % ecells
-ARGS{1}{28} = coder.typeof(false,[N   1],'Gpu',true); % icells
+ARGS{1}{27} = coder.typeof(false,[N+nSpikeGenCells   1],'Gpu',true); % ecells
+ARGS{1}{28} = coder.typeof(false,[N+nSpikeGenCells   1],'Gpu',true); % icells
 if (nSpikeGenCells > 0)
     ARGS{1}{29} = coder.typeof(single(0),[nSpikeGenCells 1],'Gpu',true); % spikeGenProbs
 else

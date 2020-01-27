@@ -5,6 +5,7 @@ classdef AEVLIFnetwork < handle
        nGroups
        nSpikeGenerators
        nNeurons
+       nSpikeGeneratorNeurons
        coordinateFrames
        spikeGeneratorInfo
     end
@@ -229,7 +230,7 @@ classdef AEVLIFnetwork < handle
             default_std_b = 0;
             default_mean_VsynE = 0; % 0mV
             default_std_VsynE = 0;
-            default_mean_VsynI = -.08; % -80mV
+            default_mean_VsynI = -.07; % -80mV
             default_std_VsynI = 0;
             default_mean_max_GsynE = 10e-6; % 10uS
             default_std_max_GsynE = 0;
@@ -360,6 +361,7 @@ classdef AEVLIFnetwork < handle
             %
             %   firingRate - firing rate of this group in Hz
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
+            obj.nSpikeGeneratorNeurons = obj.nSpikeGeneratorNeurons + N;
             info.id = -obj.nSpikeGenerators;
             info.name = name;
             info.N = N;
@@ -489,9 +491,13 @@ classdef AEVLIFnetwork < handle
             end
             if (~verbose)
                 fprintf('======================================== %s ======================================== \n',class(obj))
-                fprintf('Total # of neurons: %i \n',obj.nNeurons)
+                fprintf('Total # of simulated neurons: %i \n',obj.nNeurons)
                 fprintf('Excitatory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isExcitatory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isExcitatory]).id]))
                 fprintf('Inhibitory        : %1$i across groups %2$s \n',sum([obj.groupInfo([obj.groupInfo.isInhibitory]).N]),sprintf('%d ',[obj.groupInfo([obj.groupInfo.isInhibitory]).id]))
+                fprintf('\n')
+                fprintf('Total # of SpikeGenerator neurons: %i \n',obj.nSpikeGeneratorNeurons)
+                fprintf('Excitatory        : %1$i across generators %2$s \n',sum([obj.spikeGeneratorInfo([obj.spikeGeneratorInfo.isExcitatory]).N]),sprintf('%d ',[obj.spikeGeneratorInfo([obj.spikeGeneratorInfo.isExcitatory]).id]))
+                fprintf('Inhibitory        : %1$i across generators %2$s \n',sum([obj.spikeGeneratorInfo([obj.spikeGeneratorInfo.isInhibitory]).N]),sprintf('%d ',[obj.spikeGeneratorInfo([obj.spikeGeneratorInfo.isInhibitory]).id]))
                 fprintf('\n')
                 fprintf('CONNECTION SUMMARY: \n')
                 for i=1:obj.nGroups
@@ -523,9 +529,22 @@ classdef AEVLIFnetwork < handle
                             fprintf('%1$15s = %2$10g \n',fnames{j},obj.groupInfo(i).(fnames{j}));
                         end
                     end
-                    fprintf('____________________________________________\n')
+                    fprintf('________________________________________________________________\n')
                     fprintf('\n')
                 end
+                fprintf('__________________________________________________________________________________________________\n')
+                fprintf('SPIKE GENERATOR INFO: \n')
+                for i=1:obj.nSpikeGenerators
+                    fprintf('GROUP ID: %i \n',obj.spikeGeneratorInfo(i).id)
+                    fprintf('GROUP NAME: %s \n', obj.spikeGeneratorInfo(i).name)
+                    fprintf('NEURON TYPE: %s \n', obj.spikeGeneratorInfo(i).neuronType)
+                    fprintf('NEURON #: %i \n', obj.spikeGeneratorInfo(i).N)
+                    fprintf('INDICES: %1$i ---> %2$i \n',obj.spikeGeneratorInfo(i).start_ind,obj.spikeGeneratorInfo(i).end_ind)
+                    fprintf('FIRING RATE: %f \n', obj.spikeGeneratorInfo(i).firingRate)
+                    fprintf('________________________________________________________________\n')
+                    fprintf('\n')
+                end
+                fprintf('__________________________________________________________________________________________________\n')
                 fprintf('CONNECTION SUMMARY: \n')
                 for i=1:obj.nGroups
                     for j=1:length(obj.groupInfo(i).targets)
@@ -537,6 +556,22 @@ classdef AEVLIFnetwork < handle
                                 fprintf('    %1$s : %2$s \n',fnames{k},func2str(obj.groupInfo(i).connectionParams{j}.(fnames{k})))
                             elseif (isa(obj.groupInfo(i).connectionParams{j}.(fnames{k}),'weightDistribution'))
                                 w = obj.groupInfo(i).connectionParams{j}.(fnames{k});
+                                fprintf('    %s : \n',fnames{k})
+                                fprintf('    min : %1$10g       max : %2$10g \n',w.xrange(1),w.xrange(end))
+                            end
+                        end
+                    end
+                end
+                for i=1:obj.nSpikeGenerators
+                    for j=1:length(obj.spikeGeneratorInfo(i).targets)
+                        fprintf('%1$i ====> %2$i \n',obj.spikeGeneratorInfo(i).id,obj.spikeGeneratorInfo(i).targets(j))
+                        fprintf('    %s \n',class(obj.spikeGeneratorInfo(i).connections(j)))
+                        fnames = fieldnames(obj.spikeGeneratorInfo(i).connectionParams{j});
+                        for k=1:length(fnames)
+                            if (isa(obj.spikeGeneratorInfo(i).connectionParams{j}.(fnames{k}),'function_handle'))
+                                fprintf('    %1$s : %2$s \n',fnames{k},func2str(obj.spikeGeneratorInfo(i).connectionParams{j}.(fnames{k})))
+                            elseif (isa(obj.spikeGeneratorInfo(i).connectionParams{j}.(fnames{k}),'weightDistribution'))
+                                w = obj.spikeGeneratorInfo(i).connectionParams{j}.(fnames{k});
                                 fprintf('    %s : \n',fnames{k})
                                 fprintf('    min : %1$10g       max : %2$10g \n',w.xrange(1),w.xrange(end))
                             end

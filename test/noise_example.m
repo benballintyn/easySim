@@ -3,9 +3,9 @@ clear all;
 
 net = EVLIFnetwork();
 
-net.addGroup('1',10,'excitatory',1,'std_noise',50e-12);
+net.addGroup('1',1000,'excitatory',1,'std_noise',50e-12);
 
-ntimesteps = 1000000;
+ntimesteps = 100000;
 useGpu = false;
 spikefile = 'spikes.bin';
 sim_dir = 'results/noise_example';
@@ -13,7 +13,8 @@ sim_dir = 'results/noise_example';
                                     'sim_dir',sim_dir,...
                                     'spikefile',spikefile,...
                                     'recompile',true,...
-                                    'recordVars',true);
+                                    'recordVars',true,...
+                                    'timeStepSize',.0002);
 
 % retrieve spike data and compute firing rates
 [spikeData] = readSpikes([sim_dir '/' spikefile],cells2record);

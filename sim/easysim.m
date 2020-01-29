@@ -20,20 +20,29 @@ function [dt,cells2record,sim_dir,recordV,recordVth,iappRecord] = easysim(net,nT
 %              easysim(net,nT,useGpu,'recompile',true,'spikefile','myspikes.bin')
 %
 %               The optional parameters are:
-%                   1. 'sim_dir'   - path to directory in which to save simulation
-%                                  data. The default is ./tmp
-%                   2. 'spikefile' - filename in which spike times will be
-%                                    stored.
-%                   3. 'recompile' - true or false. If true, easysim will
-%                                    call the relevant compilation
-%                                    functions to recompile the simulation
-%                                    code to be appropriate for the current
-%                                    network. NOTE: you will need to do
-%                                    this anytime you are using the GPU and
-%                                    the # of neurons, spikeGenerating
-%                                    neurons, or # of cells to be recorded
-%                                    has changed from the last call to
-%                                    easysim.
+%                   1. 'sim_dir'    - path to directory in which to save simulation
+%                                     data. The default is ./tmp
+%                   2. 'spikefile'  - filename in which spike times will be
+%                                     stored.
+%                   3. 'recompile'  - true or false. If true, easysim will
+%                                     call the relevant compilation
+%                                     functions to recompile the simulation
+%                                     code to be appropriate for the current
+%                                     network. NOTE: you will need to do
+%                                     this anytime you are using the GPU and
+%                                     the # of neurons, spikeGenerating
+%                                     neurons, or # of cells to be recorded
+%                                     has changed from the last call to
+%                                     easysim.
+%                   4. 'recordVars' - true or false. If true, time series
+%                                     of certain variables will be returned
+%                                     (e.g. membrane voltage, spike
+%                                     threshold, applied current)
+%                   5. 'timeStepSize' - a float value giving the desired
+%                                       time step size (dt) to use instead
+%                                       of the automatically determined one
+%                                       (which is 10x smaller than the
+%                                       smallest time constant)
 p=inputParser;
 isNetwork = @(x) isa(net,'EVLIFnetwork') || isa(net,'AEVLIFnetwork');
 isPositiveNumber = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x) && (x>0);
@@ -44,6 +53,7 @@ addParameter(p,'sim_dir','tmp',@ischar)
 addParameter(p,'spikefile','',@ischar)
 addParameter(p,'recompile',false,@islogical)
 addParameter(p,'recordVars',false,@islogical)
+addParameter(p,'timeStepSize',.0001,isPositiveNumber)
 parse(p,net,nT,useGpu,varargin{:})
 
 if (~isempty(p.Results.sim_dir))
@@ -53,13 +63,23 @@ if (~isempty(p.Results.sim_dir))
 end
 sim_dir = p.Results.sim_dir;
 
-if (useGpu)
-    switch class(net)
-        case 'EVLIFnetwork'
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+switch class(net)
+    case 'EVLIFnetwork'
+        [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
               tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
               setupEVLIFNet(net,useGpu);
+    case 'AEVLIFnetwork'
+        [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+              tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
+              setupAEVLIFNet(net,useGpu);
+end
 
+if (useGpu)
+    if (~any(strcmp(p.UsingDefaults,'timeStepSize')))
+        dt = single(p.Results.timeStepSize);
+    end
+    switch class(net)
+        case 'EVLIFnetwork'
             if (p.Results.recompile)
                 compile_loopUpdateEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
             end
@@ -77,10 +97,6 @@ if (useGpu)
             save([p.Results.sim_dir '/dGsyn.mat'],'dGsyn','-mat')
             cells2record = gather(cells2record);
         case 'AEVLIFnetwork'
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-              tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-              setupAEVLIFNet(net,useGpu);
-
             if (p.Results.recompile)
                 compile_loopUpdateAEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
             end
@@ -99,12 +115,11 @@ if (useGpu)
             cells2record = gather(cells2record);
     end
 else
+    if (~any(strcmp(p.UsingDefaults,'timeStepSize')))
+        dt = p.Results.timeStepSize;
+    end
     switch class(net)
         case 'EVLIFnetwork'
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-              tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-              setupEVLIFNet(net,useGpu);
-
             if (p.Results.recompile)
                 if (p.Results.recordVars)
                     compile_loopUpdateEVLIFNetCPU_recordVars();
@@ -135,10 +150,6 @@ else
             save([p.Results.sim_dir '/net.mat'],'net','-mat')
             save([p.Results.sim_dir '/dGsyn.mat'],'dGsyn','-mat')
         case 'AEVLIFnetwork'
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-              tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-              setupAEVLIFNet(net,useGpu);
-
             if (p.Results.recompile)
                 if (p.Results.recordVars)
                     compile_loopUpdateAEVLIFNetCPU_recordVars();

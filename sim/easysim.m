@@ -65,9 +65,16 @@ sim_dir = p.Results.sim_dir;
 
 switch class(net)
     case 'EVLIFnetwork'
-        [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+        if (net.is_plastic)
+            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
+            tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+            is_plastic,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
+            setup_plasticEVLIFNet(net,useGpu);
+        else
+            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
               tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
               setupEVLIFNet(net,useGpu);
+        end
     case 'AEVLIFnetwork'
         [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
               tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
@@ -81,7 +88,11 @@ if (useGpu)
     switch class(net)
         case 'EVLIFnetwork'
             if (p.Results.recompile)
-                compile_loopUpdateEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
+                if (net.is_plastic)
+                    compile_loopUpdate_plasticEVLIFNetGPU
+                else
+                    compile_loopUpdateEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
+                end
             end
 
             spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');

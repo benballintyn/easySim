@@ -1,4 +1,4 @@
-classdef EVLIFnetwork < handle
+classdef plastic_EVLIFnetwork < handle
     
     properties
        groupInfo
@@ -7,11 +7,10 @@ classdef EVLIFnetwork < handle
        nNeurons
        coordinateFrames
        spikeGeneratorInfo
-       is_plastic
     end
     
     methods
-        function obj = EVLIFnetwork()
+        function obj = plastic_EVLIFnetwork()
             % This class holds all of the necessary information about an
             % EVLIFnetwork. The E in EVLIF stands for 'exponential' and
             % refers to the spike generation mechansim used. the V in EVLIF
@@ -58,15 +57,10 @@ classdef EVLIFnetwork < handle
                 'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
                 'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},'std_tau_synI',{},...
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
-                'std_El',{},'mean_dth',{},'std_dth',{},'mean_A2plus',{},'std_A2plus',{},...
-                'mean_A3plus',{},'std_A3plus',{},'mean_A2minus',{},'std_A2minus',{},...
-                'mean_A3minus',{},'std_A3minus',{},'mean_tau_plus',{},'std_tau_plus',{},...
-                'mean_tau_x',{},'std_tau_x',{},'mean_tau_minus',{},'std_tau_minus',{},...
-                'mean_tau_y',{},'std_tau_y',{},'xcoords',{},'ycoords',{},'record',{});
+                'std_El',{},'mean_dth',{},'std_dth',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'firingRate',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
-            obj.is_plastic = false;
         end
         
         function addGroup(obj,name,N,neuronType,coordinateFrame,varargin)
@@ -187,11 +181,7 @@ classdef EVLIFnetwork < handle
                 'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
                 'mean_tau_synE','std_tau_synE','mean_tau_synI','std_tau_synI',...
                 'mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
-                'std_El','mean_dth','std_dth','mean_A2plus','std_A2plus',...
-                'mean_A3plus','std_A3plus','mean_A2minus','std_A2minus',...
-                'mean_A3minus','std_A3minus','mean_tau_plus','std_tau_plus',...
-                'mean_tau_x','std_tau_x','mean_tau_minus','std_tau_minus',...
-                'mean_tau_y','std_tau_y','xcoords','ycoords','record'};
+                'std_El','mean_dth','std_dth','xcoords','ycoords','record'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -231,21 +221,6 @@ classdef EVLIFnetwork < handle
             default_std_El = 0;
             default_mean_dth = .002; %2mV
             default_std_dth = 0;
-            default_mean_A2plus = 8.8e-11; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A2plus = 0;
-            default_mean_A3plus = 5.3e-2; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A3plus = 0;
-            default_mean_A2minus = 6.6e-3; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A2minus = 0;
-            default_mean_A3minus = 3.1e-3; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A3minus = 0;
-            default_mean_tau_plus = .0168; % 16.8ms (Bi and Poo, 2001)
-            default_std_tau_plus = 0;
-            default_mean_tau_x = .714; % 714ms Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_tau_x = 0;
-            default_mean_tau_minus = .0337; % 33.7ms (Bi and Poo, 2001)
-            default_std_tau_minus = 0;
-            default_mean_tau_y = .04; % 40ms Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
             default_record = true;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
@@ -290,22 +265,6 @@ classdef EVLIFnetwork < handle
             addParameter(p,'std_El',default_std_El,validNumCheck);
             addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
             addParameter(p,'std_dth',default_std_dth,validNumCheck);
-            addParameter(p,'mean_A2plus',default_mean_A2plus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A2plus',default_std_A2plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_A3plus',default_mean_A3plus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A3plus',default_std_A3plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_A2minus',default_mean_A2minus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A2minus',default_std_A2minus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_A3minus',default_mean_A3minus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A3minus',default_std_A3minus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_plus',default_mean_tau_plus,positiveNoInfCheck);
-            addParameter(p,'std_tau_plus',default_std_tau_plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_x',default_mean_tau_x,positiveNoInfCheck);
-            addParameter(p,'std_tau_x',default_std_tau_x,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_minus',default_mean_tau_minus,positiveNoInfCheck);
-            addParameter(p,'std_tau_minus',default_std_tau_minus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_y',default_mean_tau_y,positiveNoInfCheck);
-            addParameter(p,'std_tau_y',default_std_tau_y,nonNegativeNoInfCheck);
             addParameter(p,'record',default_record,@islogical)
             parse(p,name,N,neuronType,coordinateFrame,varargin{:})
             
@@ -359,7 +318,7 @@ classdef EVLIFnetwork < handle
             obj.groupInfo(obj.nGroups) = s;
         end
         
-        function addSpikeGenerator(obj,name,N,neuronType,firingRate,varargin)
+        function addSpikeGenerator(obj,name,N,neuronType,firingRate)
             % addSpikeGenerator(name,N,neuronType,firingRate)
             %   name       - string name for this spikeGenerator group
             %
@@ -368,32 +327,6 @@ classdef EVLIFnetwork < handle
             %   neuronType - 'excitatory' or 'inhibitory'
             %
             %   firingRate - firing rate of this group in Hz
-            p = inputParser;
-            default_mean_A2plus = 8.8e-11; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A2plus = 0;
-            default_mean_A3plus = 5.3e-2; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_A3plus = 0;
-            default_mean_tau_plus = .0168; % 16.8ms (Bi and Poo, 2001)
-            default_std_tau_plus = 0;
-            default_mean_tau_x = .714; % 714ms Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
-            default_std_tau_x = 0;
-            checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
-            positiveNoInfCheck = @(x) x > 0 && ~isinf(x);
-            nonNegativeNoInfCheck = @(x) x>= 0 && ~isinf(x);
-            addRequired(p,'name',@ischar);
-            addRequired(p,'N',positiveNoInfCheck);
-            addRequired(p,'neuronType',checkNeuronType);
-            addRequired(p,'firingRate',nonNegativeNoInfCheck);
-            addParameter(p,'mean_A2plus',default_mean_A2plus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A2plus',default_std_A2plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_A3plus',default_mean_A3plus,nonNegativeNoInfCheck);
-            addParameter(p,'std_A3plus',default_std_A3plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_plus',default_mean_tau_plus,positiveNoInfCheck);
-            addParameter(p,'std_tau_plus',default_std_tau_plus,nonNegativeNoInfCheck);
-            addParameter(p,'mean_tau_x',default_mean_tau_x,positiveNoInfCheck);
-            addParameter(p,'std_tau_x',default_std_tau_x,nonNegativeNoInfCheck)
-            
-            
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
             info.id = -obj.nSpikeGenerators;
             info.name = name;
@@ -489,13 +422,6 @@ classdef EVLIFnetwork < handle
                     end
                     obj.spikeGeneratorInfo(-src_id).targets = [obj.spikeGeneratorInfo(-src_id).targets tgt_id];
                     obj.spikeGeneratorInfo(-src_id).connections = [obj.spikeGeneratorInfo(-src_id).connections conn];
-                    if (isfield(connParams,'is_plastic'))
-                        if (connParams.is_plastic)
-                            obj.is_plastic = true;
-                        end
-                    else
-                        connParams.is_plastic = false;
-                    end
                     obj.spikeGeneratorInfo(-src_id).connectionParams{end+1} = connParams;
                 end
             else
@@ -520,13 +446,6 @@ classdef EVLIFnetwork < handle
                     end
                     obj.groupInfo(src_id).targets = [obj.groupInfo(src_id).targets tgt_id];
                     obj.groupInfo(src_id).connections = [obj.groupInfo(src_id).connections conn];
-                    if (isfield(connParams,'is_plastic'))
-                        if (connParams.is_plastic)
-                            obj.is_plastic = true;
-                        end
-                    else
-                        connParams.is_plastic = false;
-                    end
                     obj.groupInfo(src_id).connectionParams{end+1} = connParams;
                 end
             end

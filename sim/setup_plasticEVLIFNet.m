@@ -1,6 +1,7 @@
 function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-          setupEVLIFNet(net,useGpu)
+          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+          is_plastic,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
+          setup_plasticEVLIFNet(net,useGpu)
 % This function initializes all of the relevant variables for simulation
 % based based on whether a GPU will be used to do the simulation or not.
 % The output of this function should be fed directly into one of the
@@ -12,10 +13,6 @@ function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,max
 %       useGpu  - true or false. If true, variables will be initialized as
 %                 gpuArrays with single precision. If false, variables will
 %                 be normal arrays with double precision.
-
-if (net.is_plastic)
-    error('The input network has plastic synapses but this setup function does not support plasticity. Use setup_plasticEVLIFNet instead.')
-end
 
 % Total # of neurons to be simulated
 N = net.nNeurons; % total # of simulated neurons
@@ -47,19 +44,32 @@ if (useGpu)
     Vth =      gpuArray(zeros(N,1,'single')); % Spike threshold
     VsynE =    gpuArray(ones(N,1,'single')); % Excitatory synaptic reversal potential
     VsynI =    gpuArray(ones(N,1,'single')); % Inhibitory synaptic reversal potential
-    dGsyn =     gpuArray(zeros(N,totalN,'single')); % synaptic 'weight' matrix (change in synaptic conductance for presynaptic spike)
+    dGsyn =    gpuArray(zeros(N,totalN,'single')); % synaptic 'weight' matrix (change in synaptic conductance for presynaptic spike)
+    r1 =       gpuArray(zeros(totalN,1,'single')); % presynaptic plasticity variable 1
+    r2 =       gpuArray(zeros(totalN,1,'single')); % presynaptic plasticity variable 2
+    o1 =       gpuArray(zeros(N,1,'single')); % postsynaptic plasticity variable 1
+    o2 =       gpuArray(zeros(N,1,'single'));
     
     % Variables that will not change with time
-    Vth0 =      gpuArray(zeros(N,1,'single')); % baseline spike threshold
-    Vth_max =   gpuArray(zeros(N,1,'single')); % maximum spike threshold
-    tau_ref =   gpuArray(zeros(N,1,'single')); % refactory period time constant (for variable threshold)
-    tau_synE =  gpuArray(zeros(N,1,'single')); % excitatory synaptic time constant
-    tau_synI =  gpuArray(zeros(N,1,'single')); % inhibitory synaptic time constant
-    Cm  =       gpuArray(zeros(N,1,'single')); % membrane capacitance
-    Gl =        gpuArray(zeros(N,1,'single')); % leak conductance
-    El =        gpuArray(zeros(N,1,'single')); % leak reversal potential
-    dth =       gpuArray(zeros(N,1,'single')); % spike generation voltage range
-    std_noise = gpuArray(zeros(N,1,'single')); % standard deviation of the noise current
+    Vth0 =       gpuArray(zeros(N,1,'single')); % baseline spike threshold
+    Vth_max =    gpuArray(zeros(N,1,'single')); % maximum spike threshold
+    tau_ref =    gpuArray(zeros(N,1,'single')); % refactory period time constant (for variable threshold)
+    tau_synE =   gpuArray(zeros(N,1,'single')); % excitatory synaptic time constant
+    tau_synI =   gpuArray(zeros(N,1,'single')); % inhibitory synaptic time constant
+    Cm  =        gpuArray(zeros(N,1,'single')); % membrane capacitance
+    Gl =         gpuArray(zeros(N,1,'single')); % leak conductance
+    El =         gpuArray(zeros(N,1,'single')); % leak reversal potential
+    dth =        gpuArray(zeros(N,1,'single')); % spike generation voltage range
+    std_noise =  gpuArray(zeros(N,1,'single')); % standard deviation of the noise current
+    is_plastic = gpuArray(zeros(N,totalN,'logical')); % matrix to keep track of which synapses are plastic
+    A2plus =     gpuArray(zeros(totalN,1,'single')); % doublet STDP LTP factor
+    A3plus =     gpuArray(zeros(totalN,1,'single')); % triplet STDP LTP factor
+    A2minus =    gpuArray(zeros(N,1,'single')); % doublet STDP LTD factor
+    A3minus =    gpuArray(zeros(N,1,'single')); % triplet STDP LTD factor
+    tau_plus =   gpuArray(zeros(totalN,1,'single')); % r1 time constant
+    tau_x =      gpuArray(zeros(totalN,1,'single')); % r2 time constant
+    tau_minus =  gpuArray(zeros(N,1,'single')); % o1 time constant
+    tau_y =      gpuArray(zeros(N,1,'single')); % o2 time constant
     
     ecells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are excitatory
     icells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are inhibitory
@@ -81,6 +91,10 @@ else
     VsynE =    ones(N,1);
     VsynI =    ones(N,1);
     dGsyn =         zeros(N,totalN);
+    r1 = zeros(totalN,1);
+    r2 = zeros(totalN,2);
+    o1 = zeros(N,1);
+    o2 = zeros(N,1);
     
     % Variables that will not change with time
     Vth0 =          zeros(N,1);
@@ -96,6 +110,15 @@ else
     ecells =        zeros(totalN,1);
     icells =        zeros(totalN,1);
     spikeGenProbs = zeros(nSpikeGen,1);
+    is_plastic = false(N,totalN);
+    A2plus =     zeros(totalN,1); % doublet STDP LTP factor
+    A3plus =     zeros(totalN,1); % triplet STDP LTP factor
+    A2minus =    zeros(N,1); % doublet STDP LTD factor
+    A3minus =    zeros(N,1); % triplet STDP LTD factor
+    tau_plus =   zeros(totalN,1); % r1 time constant
+    tau_x =      zeros(totalN,1); % r2 time constant
+    tau_minus =  zeros(N,1); % o1 time constant
+    tau_y =      zeros(N,1); % o2 time constant
 end
 
 % Go through each group and add them to the ecells and icells vectors. Also
@@ -146,22 +169,30 @@ for i=1:net.nGroups
     groupN = preEnd - preStart + 1;
     % initialize all nonzero variables for current group (V(0), Vth, VsynE, VsynI, dGref,
     % tau_ref, tau_synE, tau_synI, Cm, Gl, El, Ek, dth)
-    V(preStart:preEnd) = normrnd(net.groupInfo(i).mean_V0,net.groupInfo(i).std_V0,groupN,1);
-    Vreset(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vreset,net.groupInfo(i).std_Vreset,groupN,1);
-    Vth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth0,net.groupInfo(i).std_Vth0,groupN,1);
-    Vth0(preStart:preEnd) = Vth(preStart:preEnd);
-    Vth_max(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth_max,net.groupInfo(i).std_Vth_max,groupN,1);
-    VsynE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_VsynE,net.groupInfo(i).std_VsynE,groupN,1);
-    VsynI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_VsynI,net.groupInfo(i).std_VsynI,groupN,1);
-    maxGsynE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_max_GsynE,net.groupInfo(i).std_max_GsynE,groupN,1);
-    maxGsynI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_max_GsynI,net.groupInfo(i).std_max_GsynI,groupN,1);
-    tau_ref(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_ref,net.groupInfo(i).std_tau_ref,groupN,1);
-    tau_synE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_synE,net.groupInfo(i).std_tau_synE,groupN,1);
-    tau_synI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_synI,net.groupInfo(i).std_tau_synI,groupN,1);
-    Cm(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Cm,net.groupInfo(i).std_Cm,groupN,1);
-    Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
-    El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
-    dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
+    V(preStart:preEnd)         = normrnd(net.groupInfo(i).mean_V0,net.groupInfo(i).std_V0,groupN,1);
+    Vreset(preStart:preEnd)    = normrnd(net.groupInfo(i).mean_Vreset,net.groupInfo(i).std_Vreset,groupN,1);
+    Vth(preStart:preEnd)       = normrnd(net.groupInfo(i).mean_Vth0,net.groupInfo(i).std_Vth0,groupN,1);
+    Vth0(preStart:preEnd)      = Vth(preStart:preEnd);
+    Vth_max(preStart:preEnd)   = normrnd(net.groupInfo(i).mean_Vth_max,net.groupInfo(i).std_Vth_max,groupN,1);
+    VsynE(preStart:preEnd)     = normrnd(net.groupInfo(i).mean_VsynE,net.groupInfo(i).std_VsynE,groupN,1);
+    VsynI(preStart:preEnd)     = normrnd(net.groupInfo(i).mean_VsynI,net.groupInfo(i).std_VsynI,groupN,1);
+    maxGsynE(preStart:preEnd)  = normrnd(net.groupInfo(i).mean_max_GsynE,net.groupInfo(i).std_max_GsynE,groupN,1);
+    maxGsynI(preStart:preEnd)  = normrnd(net.groupInfo(i).mean_max_GsynI,net.groupInfo(i).std_max_GsynI,groupN,1);
+    tau_ref(preStart:preEnd)   = normrnd(net.groupInfo(i).mean_tau_ref,net.groupInfo(i).std_tau_ref,groupN,1);
+    tau_synE(preStart:preEnd)  = normrnd(net.groupInfo(i).mean_tau_synE,net.groupInfo(i).std_tau_synE,groupN,1);
+    tau_synI(preStart:preEnd)  = normrnd(net.groupInfo(i).mean_tau_synI,net.groupInfo(i).std_tau_synI,groupN,1);
+    Cm(preStart:preEnd)        = normrnd(net.groupInfo(i).mean_Cm,net.groupInfo(i).std_Cm,groupN,1);
+    Gl(preStart:preEnd)        = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
+    El(preStart:preEnd)        = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
+    dth(preStart:preEnd)       = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
+    A2plus(preStart:preEnd)    = normrnd(net.groupInfo(i).mean_A2plus,net.groupInfo(i).std_A2plus,groupN,1);
+    A3plus(preStart:preEnd)    = normrnd(net.groupInfo(i).mean_A3plus,net.groupInfo(i).std_A3plus,groupN,1);
+    A2minus(preStart:preEnd)   = normrnd(net.groupInfo(i).mean_A2minus,net.groupInfo(i).std_A2minus,groupN,1);
+    A3minus(preStart:preEnd)   = normrnd(net.groupInfo(i).mean_A3minus,net.groupInfo(i).std_A3minus,groupN,1);
+    tau_plus(preStart:preEnd)  = normrnd(net.groupInfo(i).mean_tau_plus,net.groupInfo(i).std_tau_plus,groupN,1);
+    tau_x(preStart:preEnd)     = normrnd(net.groupInfo(i).mean_tau_x,net.groupInfo(i).std_tau_x,groupN,1);
+    tau_minus(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_minus,net.groupInfo(i).std_tau_minus,groupN,1);
+    tau_y(preStart:preEnd)     = normrnd(net.groupInfo(i).mean_tau_y,net.groupInfo(i).std_tau_y,groupN,1);
     std_noise(preStart:preEnd) = net.groupInfo(i).std_noise;
     
     % Go through all of this groups targets and call the .genConn() method
@@ -173,14 +204,23 @@ for i=1:net.nGroups
         postEnd = net.groupInfo(targets(j)).end_ind;
         curdGsyn = net.groupInfo(i).connections(j).genConn();
         dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
+        if (net.groupInfo(i).connectionParams{j}.is_plastic)
+            is_plastic(postStart:postEnd,preStart:preEnd) = true;
+        end
     end
 end
 
-% Go through all of the spike generator groups and add their connections to
-% the dGsyn matrix
+% Go through all of the spike generator groups and initialize plasticity variables
+% and add their connections to the dGsyn matrix
 for i=1:net.nSpikeGenerators
     preStart = net.spikeGeneratorInfo(i).start_ind;
     preEnd = net.spikeGeneratorInfo(i).end_ind;
+    groupN = preEnd - preStart + 1;
+    A2plus(preStart:preEnd) = normrnd(net.spikeGeneratorInfo(i).mean_A2plus,net.spikeGeneratorInfo(i).std_A2plus,groupN,1);
+    A3plus(preStart:preEnd) = normrnd(net.spikeGeneratorInfo(i).mean_A3plus,net.spikeGeneratorInfo(i).std_A3plus,groupN,1);
+    tau_plus(preStart:preEnd) = normrnd(net.spikeGeneratorInfo(i).mean_tau_plus,net.spikeGeneratorInfo(i).std_tau_plus,groupN,1);
+    tau_x(preStart:preEnd) = normrnd(net.spikeGeneratorInfo(i).mean_tau_x,net.spikeGeneratorInfo(i).std_tau_x,groupN,1);
+    
     targets = net.spikeGeneratorInfo(i).targets;
     for j=1:length(net.spikeGeneratorInfo(i).targets)
         postStart = net.groupInfo(targets(j)).start_ind;

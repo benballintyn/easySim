@@ -246,6 +246,7 @@ classdef EVLIFnetwork < handle
             default_mean_tau_minus = .0337; % 33.7ms (Bi and Poo, 2001)
             default_std_tau_minus = 0;
             default_mean_tau_y = .04; % 40ms Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
+            default_std_tau_y = 0;
             default_record = true;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);

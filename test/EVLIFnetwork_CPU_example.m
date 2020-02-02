@@ -78,14 +78,14 @@ ntimesteps = 100000;
 useGpu = false; % ONLY DIFFERENCE IS CHANGED THIS TO FALSE
 spikefile = 'spikes.bin';
 sim_dir = 'results/EVLIFnetwork_CPU_example';
-[dt,cells2record,sim_dir] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,'spikefile',spikefile,'recompile',true);
+[outputs] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,'spikefile',spikefile,'recompile',true);
 
 % retrieve spike data and compute firing rates
-[spikeData] = readSpikes([sim_dir '/' spikefile],cells2record);
+[spikeData] = readSpikes([sim_dir '/' spikefile],outputs.cells2record);
 window = 100; % 100ms
 downsampleFactor = 10;
-frs = getFiringRates(spikeData,length(cells2record),ntimesteps,dt,downsampleFactor,window);
+frs = getFiringRates(spikeData,length(outputs.cells2record),ntimesteps,dt,downsampleFactor,window);
 
-tvec = linspace(0,ntimesteps*dt,ntimesteps/downsampleFactor);
+tvec = linspace(0,ntimesteps*outputs.dt,ntimesteps/downsampleFactor);
 plot(tvec,frs)
 

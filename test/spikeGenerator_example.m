@@ -25,20 +25,20 @@ ntimesteps = 10000;
 spkfile = 'spikes.bin';
 sim_dir = 'results/spikeGenerator_example';
 if (useGpu)
-    [dt,cells2record,sim_dir] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,'spikefile',spikefile,'recompile',true);
+    [outputs] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,'spikefile',spikefile,'recompile',true);
 else
-    [dt,cells2record,sim_dir,recordV,recordVth,iappRecord] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,...
-                                                                                    'spikefile',spikefile,...
-                                                                                    'recompile',true,...
-                                                                                    'recordVars',true);
+    [outputs] = easysim(net,ntimesteps,useGpu,'sim_dir',sim_dir,...
+                                              'spikefile',spikefile,...
+                                              'recompile',true,...
+                                              'recordVars',true);
 end
 
 % Extract spikes from the data file and convert them to firing rate traces
-[spikeData] = readSpikes([sim_dir '/' spikefile],cells2record);
-window = .1/dt; % 100ms
+[spikeData] = readSpikes([sim_dir '/' spikefile],outputs.cells2record);
+window = .1/outputs.dt; % 100ms
 downsampleFactor = 10;
-frs = getFiringRates(spikeData,length(cells2record),ntimesteps,dt,downsampleFactor,window);
+frs = getFiringRates(spikeData,length(outputs.cells2record),ntimesteps,outputs.dt,downsampleFactor,window);
 
-tvec = linspace(0,ntimesteps*dt,ntimesteps/downsampleFactor);
+tvec = linspace(0,ntimesteps*outputs.dt,ntimesteps/downsampleFactor);
 plot(tvec,frs)
 

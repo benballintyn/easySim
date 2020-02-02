@@ -18,7 +18,7 @@ cfg.ReportPotentialDifferences = false;
 
 %% Define argument types for entry-point 'loopUpdateNetGPU'.
 ARGS = cell(1,1);
-ARGS{1} = cell(42,1);
+ARGS{1} = cell(43,1);
 ARGS{1}{1} = coder.typeof(single(0),[N   1],'Gpu',true); % V
 ARGS{1}{2} = coder.typeof(single(0),[N   1],'Gpu',true); % Vreset
 ARGS{1}{3} = coder.typeof(single(0),[N   1],'Gpu',true); % tau_ref
@@ -54,21 +54,22 @@ else
     ARGS{1}{26} = coder.typeof(0,[0 0]);
 end
 ARGS{1}{27} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % is_plastic logical matrix
-ARGS{1}{28} = coder.typeof('string'); % plasticity_type string
-ARGS{1}{29} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r1
-ARGS{1}{30} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r2
-ARGS{1}{31} = coder.typeof(single(0),[N 1],'Gpu',true); % o1
-ARGS{1}{32} = coder.typeof(single(0),[N 1],'Gpu',true); % o2
-ARGS{1}{33} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % A2plus
-ARGS{1}{34} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % A3plus
-ARGS{1}{35} = coder.typeof(single(0),[N 1],'Gpu',true); % A2minus
-ARGS{1}{36} = coder.typeof(single(0),[N 1],'Gpu',true); % A3minus
-ARGS{1}{37} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % tau_plus
-ARGS{1}{38} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % tau_x
-ARGS{1}{39} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_minus
-ARGS{1}{40} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_y
-ARGS{1}{41} = coder.typeof(0); % nT (# of timesteps to simulate)
-ARGS{1}{42} = coder.typeof(0); % file ID for spikes
+ARGS{1}{28} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % Connectivity matrix
+ARGS{1}{29} = coder.typeof('string'); % plasticity_type string
+ARGS{1}{30} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r1
+ARGS{1}{31} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r2
+ARGS{1}{32} = coder.typeof(single(0),[N 1],'Gpu',true); % o1
+ARGS{1}{33} = coder.typeof(single(0),[N 1],'Gpu',true); % o2
+ARGS{1}{34} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % A2plus
+ARGS{1}{35} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % A3plus
+ARGS{1}{36} = coder.typeof(single(0),[N 1],'Gpu',true); % A2minus
+ARGS{1}{37} = coder.typeof(single(0),[N 1],'Gpu',true); % A3minus
+ARGS{1}{38} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % tau_plus
+ARGS{1}{39} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % tau_x
+ARGS{1}{40} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_minus
+ARGS{1}{41} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_y
+ARGS{1}{42} = coder.typeof(0); % nT (# of timesteps to simulate)
+ARGS{1}{43} = coder.typeof(0); % file ID for spikes
 
 %% Invoke MATLAB Coder.
 codegen -config cfg loopUpdate_plasticEVLIFNetGPU -args ARGS{1}

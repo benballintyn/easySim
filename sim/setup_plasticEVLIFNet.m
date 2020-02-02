@@ -1,6 +1,6 @@
 function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-          is_plastic,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
+          is_plastic,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
           setup_plasticEVLIFNet(net,useGpu)
 % This function initializes all of the relevant variables for simulation
 % based based on whether a GPU will be used to do the simulation or not.
@@ -62,6 +62,7 @@ if (useGpu)
     dth =        gpuArray(zeros(N,1,'single')); % spike generation voltage range
     std_noise =  gpuArray(zeros(N,1,'single')); % standard deviation of the noise current
     is_plastic = gpuArray(zeros(N,totalN,'logical')); % matrix to keep track of which synapses are plastic
+    C =          gpuArray(zeros(N,totalN,'logical')); % Connectivity matrix
     A2plus =     gpuArray(zeros(totalN,1,'single')); % doublet STDP LTP factor
     A3plus =     gpuArray(zeros(totalN,1,'single')); % triplet STDP LTP factor
     A2minus =    gpuArray(zeros(N,1,'single')); % doublet STDP LTD factor
@@ -92,7 +93,7 @@ else
     VsynI =    ones(N,1);
     dGsyn =         zeros(N,totalN);
     r1 = zeros(totalN,1);
-    r2 = zeros(totalN,2);
+    r2 = zeros(totalN,1);
     o1 = zeros(N,1);
     o2 = zeros(N,1);
     
@@ -111,6 +112,7 @@ else
     icells =        zeros(totalN,1);
     spikeGenProbs = zeros(nSpikeGen,1);
     is_plastic = false(N,totalN);
+    C          = false(N,totalN);
     A2plus =     zeros(totalN,1); % doublet STDP LTP factor
     A3plus =     zeros(totalN,1); % triplet STDP LTP factor
     A2minus =    zeros(N,1); % doublet STDP LTD factor
@@ -251,6 +253,7 @@ dth = max(0,dth);
 dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))));
 std_noise = max(0,std_noise/sqrt(dt));
 dGsyn = max(0,dGsyn);
+C = (dGsyn > 0);
 
 % set spike generator spike probabilities
 for i=1:net.nSpikeGenerators

@@ -38,9 +38,8 @@ addRequired(p,'window',greaterThanOneNoInfCheck);
 addParameter(p,'filter_type','alpha',@ischar);
 parse(p,spikeData,nNeurons,nTimesteps,dt,downsampleFactor,window,varargin{:});
 
-frs = zeros(nNeurons,nTimesteps);
+frs = zeros(ceil(nTimesteps/downsampleFactor),nNeurons);
 if (isempty(spikeData))
-    frs = downsample(frs',downsampleFactor);
     return
 end
 tau=(-10000*dt):dt:(10000*dt);
@@ -63,8 +62,7 @@ for i=1:nNeurons
     curSpikeTimes = spikeData((spikeData(:,2) == i),1);
     spikes = zeros(1,nTimesteps);
     spikes(curSpikeTimes) = 1;
-    frs(i,:) = conv(spikes,w,'same');
+    frs(:,i) = downsample(conv(spikes,w,'same'),downsampleFactor);
 end
-frs = downsample(frs',downsampleFactor);
 end
 

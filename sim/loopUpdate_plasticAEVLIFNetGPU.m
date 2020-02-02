@@ -1,7 +1,7 @@
 function [] = loopUpdate_plasticAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
               Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,tau_synI,...
               Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-              is_plastic,plasticity_type,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun; % for code generation
@@ -13,7 +13,6 @@ n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
-C = (dGsyn > 0); % logical connectivity matrix
 
 % if no spike file was given, don't record any spikes
 if (spkfid < 0)
@@ -57,28 +56,35 @@ for i=1:nT
     end
     nSimulatedSpikes = nSimulatedSpikes + sum(spiked);
     
-    % update synaptic weights
-    % LTD first (includes simulated neuron and spikeGenerator spikes)
-    ltd1 = arrayfun(@times,C(:,allSpikes),A2minus); % (C.*A2-)
-    ltd2 = arrayfun(@times,ltd1,o1); % (C.*A2-.*o1)
-    ltd3 = arrayfun(@times,C(:,allSpikes),A3minus); % (C.*A3-)
-    ltd4 = arrayfun(@times,ltd3,o1); % (C.*A3-.*o1)
-    ltd5 = arrayfun(@times,ltd4,r2(allSpikes)'); % (C.*A3-.*o1.*r2')
-    ltd6 = arrayfun(@plus,ltd2,ltd5); % (C.*A2-.*o1) + (C.*A3-.*o1.*r2')
-    ltd7 = arrayfun(@times,ltd6,is_plastic(:,allSpikes));
-    dGsyn(:,allSpikes) = dGsyn(:,allSpikes) - ltd7.*dGsyn(:,allSpikes);
-    % LTP next (includes simulated neuron spikes only)
-    ltp1 = arrayfun(@times,C(spiked,:),A2plus');
-    ltp2 = arrayfun(@times,ltp1,r1');
-    ltp3 = arrayfun(@times,C(spiked,:),A3plus');
-    ltp4 = arrayfun(@times,ltp3,r1');
-    ltp5 = arrayfun(@times,ltp4,o2(spiked));
-    ltp6 = arrayfun(@plus,ltp2,ltp5);
-    ltp7 = arrayfun(@times,ltp6,is_plastic(spiked,:));
-    dGsyn(spiked,:) = dGsyn(spiked,:) + ltp7.*dGsyn(spiked,:);
-    
     areSimSpikes = any(spiked); % determine if there were any spikes
     areAnySpikes = any(allSpikes);
+    
+    % update synaptic weights
+    % LTD first (includes simulated neuron and spikeGenerator spikes)
+    if (areAnySpikes)
+        ltd1 = bsxfun(@times,A2minus,C(:,allSpikes));
+        ltd2 = bsxfun(@times,ltd1,o1);
+        ltd3 = bsxfun(@times,C(:,allSpikes),A3minus);
+        ltd4 = bsxfun(@times,ltd3,o1);
+        ltd5 = bsxfun(@times,ltd4,r2(allSpikes)');
+        ltd6 = ltd2 + ltd5;
+        ltd7 = bsxfun(@times,ltd6,is_plastic(:,allSpikes));
+        ltd8 = bsxfun(@times,ltd7,dGsyn(:,allSpikes));
+        dGsyn(:,allSpikes) = dGsyn(:,allSpikes) - ltd8;
+    end
+    % LTP next (includes simulated neuron spikes only)
+    if (areSimSpikes)
+        ltp1 = bsxfun(@times,C(spiked,:),A2plus');
+        ltp2 = bsxfun(@times,ltp1,r1');
+        ltp3 = bsxfun(@times,C(spiked,:),A3plus');
+        ltp4 = bsxfun(@times,ltp3,r1');
+        ltp5 = bsxfun(@times,ltp4,o2(spiked));
+        ltp6 = ltp2 + ltp5;
+        ltp7 = bsxfun(@times,ltp6,is_plastic(spiked,:));
+        ltp8 = bsxfun(@times,ltp7,dGsyn(spiked,:));
+        dGsyn(spiked,:) = dGsyn(spiked,:) + ltp8;
+    end
+    
     if (areSimSpikes) % If there are any simulated spikes
         V(spiked) = Vreset(spiked); % reset membrane voltages of spiking neurons
         Vth(spiked) = Vth_max(spiked); % set spike threshold to max

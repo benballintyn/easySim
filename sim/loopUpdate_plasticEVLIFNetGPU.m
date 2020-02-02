@@ -49,6 +49,9 @@ for i=1:nT
     end
     nSimulatedSpikes = nSimulatedSpikes + sum(spiked);
     
+    areSimSpikes = any(spiked); % determine if there were any spikes
+    areAnySpikes = any(allSpikes);
+    
     % update synaptic weights
     % LTD first (includes simulated neuron and spikeGenerator spikes)
     if (areAnySpikes)
@@ -75,8 +78,7 @@ for i=1:nT
         dGsyn(spiked,:) = dGsyn(spiked,:) + ltp8;
     end
     
-    areSimSpikes = any(spiked); % determine if there were any spikes
-    areAnySpikes = any(allSpikes);
+    
     if (areSimSpikes) % If there are any simulated spikes
         V(spiked) = Vreset(spiked); % reset membrane voltages of spiking neurons
         Vth(spiked) = Vth_max(spiked); % set spike threshold to max

@@ -21,7 +21,7 @@ net.connect(3,2,'random',static_conn_params);
 
 net.print(true)
 
-useGpu = false;
+useGpu = true;
 nT = 100000;
 spikefile = 'spikes.bin';
 sim_dir = 'results/plasticity_example';

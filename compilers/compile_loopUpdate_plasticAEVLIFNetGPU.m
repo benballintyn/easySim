@@ -53,12 +53,12 @@ else
     ARGS{1}{29} = coder.typeof(0,[0 0]);
 end
 if (nCells2record > 0)
-    ARGS{1}{30} = coder.typeof(0,[nCells2record 1],'Gpu',true); % cells2record
+    ARGS{1}{30} = coder.typeof(single(0),[nCells2record 1],'Gpu',true); % cells2record
 else
     ARGS{1}{30} = coder.typeof(0,[0 0]);
 end
 ARGS{1}{31} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % is_plastic logical matrix
-ARGS{1}{32} = coder.typeof('string'); % plasticity_type string
+ARGS{1}{32} = coder.typeof('string',[1 20],[false true]); % plasticity_type string
 ARGS{1}{33} = coder.typeof(single(0),[N N+nSpikeGenCells],'Gpu',true); % Connectivity matrix C
 ARGS{1}{34} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r1
 ARGS{1}{35} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r2

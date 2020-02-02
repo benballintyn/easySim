@@ -54,8 +54,8 @@ else
     ARGS{1}{26} = coder.typeof(0,[0 0]);
 end
 ARGS{1}{27} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % is_plastic logical matrix
-ARGS{1}{28} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % Connectivity matrix
-ARGS{1}{29} = coder.typeof('string'); % plasticity_type string
+ARGS{1}{28} = coder.typeof('string',[1 20],[false true]); % plasticity_type string
+ARGS{1}{29} = coder.typeof(false,[N N+nSpikeGenCells],'Gpu',true); % Connectivity matrix
 ARGS{1}{30} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r1
 ARGS{1}{31} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % r2
 ARGS{1}{32} = coder.typeof(single(0),[N 1],'Gpu',true); % o1

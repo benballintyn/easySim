@@ -26,7 +26,6 @@ for i=1:nT
     Vth = arrayfun(@plus,Vth,dVthdt*dt); % Vth = Vth + dt*[(Vth0 - Vth)./tau_ref]
     
     spiked = (V > Vth); % determine simulated neurons that spiked
-    
     % check if any spike generators spiked
     if (useSpikeGen)
         spikeGenSpikes = (rand(nSpikeGen,1) < spikeGenProbs);

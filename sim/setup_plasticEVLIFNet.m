@@ -5,7 +5,7 @@ function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,max
 % This function initializes all of the relevant variables for simulation
 % based based on whether a GPU will be used to do the simulation or not.
 % The output of this function should be fed directly into one of the
-% simulation functions (e.g. loopUpdateEVLIFNetGPU_fast)
+% simulation functions (e.g. loopUpdate_plasticEVLIFNetGPU)
 % setupEVLIFNet(net,useGpu)
 %   INPUTS:
 %       net     - network object (e.g. EVLIFnetwork)

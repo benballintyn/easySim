@@ -1,23 +1,25 @@
 function [outputs] = easysim(net,nT,useGpu,varargin)
 % easysim(net,nT,useGpu,varargin)
-%   This function funnels that input network to the correct simulation
+%   This function funnels the input network to the correct simulation
 %   function, recompiling code as requested. It also opens and closes the
 %   files in which spike times are saved and also saves the connection
 %   matrix used in the simulation.
 %
-%   net      - network object (e.g. EVLIFnetwork or AEVLIFnetwork)
+%   easysim(net,nT,useGpu,varargin)
+%       Inputs:
+%           net      - network object (e.g. EVLIFnetwork or AEVLIFnetwork)
 %
-%   nT       - # of timesteps to simulate
+%           nT       - # of timesteps to simulate
 %
-%   useGpu   - true or false. If true, easysim will attempt to simulate the
-%              network on a GPU using compiled CUDA code
+%           useGpu   - true or false. If true, easysim will attempt to simulate the
+%                      network on a GPU using compiled CUDA code
 %
-%   varargin - There are a few optional inputs that control if and where
-%              spike times are recorded as well as whether the simulation
-%              code should be recompiled. Each optional input must be
-%              specified as a key-value pair
-%              e.g.
-%              easysim(net,nT,useGpu,'recompile',true,'spikefile','myspikes.bin')
+%           varargin - There are several optional inputs that control if and where
+%                      spike times are recorded as well as whether the simulation
+%                      code should be recompiled. Each optional input must be
+%                      specified as a key-value pair
+%                      e.g.
+%                      easysim(net,nT,useGpu,'recompile',true,'spikefile','myspikes.bin')
 %
 %               The optional parameters are:
 %                   1. 'sim_dir'    - path to directory in which to save simulation
@@ -69,6 +71,7 @@ addParameter(p,'plasticity_type','nearest',@ischar)
 parse(p,net,nT,useGpu,varargin{:})
 outputs.run_params = p.Results;
 
+% make the directory to save simulation data if it does not exist
 if (~isempty(p.Results.sim_dir))
     if (~exist(p.Results.sim_dir,'dir'))
         mkdir(p.Results.sim_dir)
@@ -76,6 +79,7 @@ if (~isempty(p.Results.sim_dir))
 end
 sim_dir = p.Results.sim_dir;
 
+% Check the network type then initialize the relevant variables
 switch class(net)
     case 'EVLIFnetwork'
         if (net.is_plastic)
@@ -121,7 +125,7 @@ if (useGpu)
                 fprintf('Calling loopUpdate_plasticEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
                 plasticity_type = p.Results.plasticity_type;
                 tic;
-                loopUpdate_plasticEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+                dGsyn=loopUpdate_plasticEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
                                               VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,tau_synI,...
                                               Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
                                               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
@@ -132,7 +136,7 @@ if (useGpu)
             else
                 fprintf('Calling loopUpdateEVLIFNetGPU_fast_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
                 tic;
-                dGsyn=loopUpdateEVLIFNetGPU_fast_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                loopUpdateEVLIFNetGPU_fast_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
                 t=toc;

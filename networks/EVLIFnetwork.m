@@ -154,25 +154,54 @@ classdef EVLIFnetwork < handle
             %      29. 'mean_dth'       - mean spike generation voltage range
             %      30. 'std_dth'        - standard deviation of the spike
             %                             generation voltage range
-            %      31. 'record'         - can be true or false. Indicates
+            %      31. 'mean_A2plus'    - mean doublet LTP factor for
+            %                             triplet STDP
+            %      32. 'std_A2plus'     - standard deviation of the doublet
+            %                             LTP factor.
+            %      33. 'mean_A3plus'    - mean triplet LTP factor
+            %      34. 'std_A3plus'     - standard deviation of the triplet
+            %                             LTP factor
+            %      35. 'mean_A2minus'   - mean doublet LTD factor
+            %      36. 'std_A2minus'    - standard deviation of the doublet
+            %                             LTD factor
+            %      37. 'mean_A3minus'   - mean triplet LTD factor
+            %      38. 'std_A3minus'    - standard deviation of the triplet
+            %                             LTD factor
+            %      39. 'mean_tau_plus'  - mean decay time constant of the r1
+            %                             (presynaptic) STDP variable
+            %      40. 'std_tau_plus'   - standard deviation of the r1
+            %                             decay time constant
+            %      41. 'mean_tau_x'     - mean decay time constant of the
+            %                             r2 (presynaptic) STDP variable
+            %      42. 'std_tau_x'      - standard deviation of the r2
+            %                             decay time constant
+            %      43. 'mean_tau_minus' - mean decay time constant of the
+            %                             o1 (postsynaptic) STDP variable
+            %      44. 'std_tau_minus'  - standard deviation of the o1
+            %                             decay time constant
+            %      45. 'mean_tau_y'     - mean decay time constant of the
+            %                             o2 (postsynaptic) STDP variable
+            %      46. 'std_tau_y'      - standard deviation of the o2
+            %                             decay time constant
+            %      47. 'record'         - can be true or false. Indicates
             %                             whether to record this groups spike
             %                             times to a file or not
-            %      32. 'xmin'           - minimum x-value of the coordinate
+            %      48. 'xmin'           - minimum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      33. 'xmax'           - maximum x-value of the coordinate
+            %      49. 'xmax'           - maximum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      32. 'ymin'           - minimum y-value of the coordinate
+            %      50. 'ymin'           - minimum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      33. 'ymax'           - maximum y-value of the coordinate
+            %      51. 'ymax'           - maximum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
@@ -369,6 +398,21 @@ classdef EVLIFnetwork < handle
             %   neuronType - 'excitatory' or 'inhibitory'
             %
             %   firingRate - firing rate of this group in Hz
+            %
+            %   varargin:
+            %       'mean_A2plus'    - mean doublet LTP factor for
+            %                             triplet STDP
+            %       'std_A2plus'     - standard deviation of the doublet
+            %                             LTP factor.
+            %       'mean_A3plus'    - mean triplet LTP factor
+            %       'std_A3plus'     - standard deviation of the triplet
+            %       'mean_tau_plus'  - mean decay time constant of the r1
+            %                             (presynaptic) STDP variable
+            %       'std_tau_plus'   - standard deviation of the r1
+            %                             decay time constant
+            %       'mean_tau_x'     - mean decay time constant of the
+            %                             r2 (presynaptic) STDP variable
+            %       'std_tau_x'      - standard deviation of the r2
             p = inputParser;
             default_mean_A2plus = 8.8e-11; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
             default_std_A2plus = 0;
@@ -425,6 +469,10 @@ classdef EVLIFnetwork < handle
             %                build the connection object. Different
             %                connection types require different inputs.
             %                These are listed below.
+            %       General connParams:
+            %           is_plastic - true if this connection is subject to
+            %                        synaptic plasticity (triplet STDP)
+            %
             %       connParams by connType:
             %       'random':
             %           connParams.connProb - connection probability
@@ -534,6 +582,8 @@ classdef EVLIFnetwork < handle
         end
         
         function print(obj,verbose)
+            % call net.print() for a short summary of net.print(true) for a
+            % lengthy summary
             if (nargin < 2)
                 verbose = false;
             end

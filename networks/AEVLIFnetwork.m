@@ -174,25 +174,54 @@ classdef AEVLIFnetwork < handle
             %      36. 'mean_dth'       - mean spike generation voltage range
             %      37. 'std_dth'        - standard deviation of the spike
             %                             generation voltage range
-            %      38. 'record'         - can be true or false. Indicates
+            %      38. 'mean_A2plus'    - mean doublet LTP factor for
+            %                             triplet STDP
+            %      39. 'std_A2plus'     - standard deviation of the doublet
+            %                             LTP factor.
+            %      40. 'mean_A3plus'    - mean triplet LTP factor
+            %      41. 'std_A3plus'     - standard deviation of the triplet
+            %                             LTP factor
+            %      42. 'mean_A2minus'   - mean doublet LTD factor
+            %      43. 'std_A2minus'    - standard deviation of the doublet
+            %                             LTD factor
+            %      44. 'mean_A3minus'   - mean triplet LTD factor
+            %      45. 'std_A3minus'    - standard deviation of the triplet
+            %                             LTD factor
+            %      46. 'mean_tau_plus'  - mean decay time constant of the r1
+            %                             (presynaptic) STDP variable
+            %      47. 'std_tau_plus'   - standard deviation of the r1
+            %                             decay time constant
+            %      48. 'mean_tau_x'     - mean decay time constant of the
+            %                             r2 (presynaptic) STDP variable
+            %      49. 'std_tau_x'      - standard deviation of the r2
+            %                             decay time constant
+            %      50. 'mean_tau_minus' - mean decay time constant of the
+            %                             o1 (postsynaptic) STDP variable
+            %      51. 'std_tau_minus'  - standard deviation of the o1
+            %                             decay time constant
+            %      52. 'mean_tau_y'     - mean decay time constant of the
+            %                             o2 (postsynaptic) STDP variable
+            %      53. 'std_tau_y'      - standard deviation of the o2
+            %                             decay time constant
+            %      54. 'record'         - can be true or false. Indicates
             %                             whether to record this groups spike
             %                             times to a file or not
-            %      39. 'xmin'           - minimum x-value of the coordinate
+            %      55. 'xmin'           - minimum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      40. 'xmax'           - maximum x-value of the coordinate
+            %      56. 'xmax'           - maximum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      41. 'ymin'           - minimum y-value of the coordinate
+            %      57. 'ymin'           - minimum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      42. 'ymax'           - maximum y-value of the coordinate
+            %      58. 'ymax'           - maximum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the

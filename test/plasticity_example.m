@@ -22,7 +22,7 @@ net.connect(3,2,'random',static_conn_params);
 net.print(true)
 
 useGpu = true;
-nT = 100000;
+nT = 1000000;
 spikefile = 'spikes.bin';
 sim_dir = 'results/plasticity_example';
 [outputs] = easysim(net,nT,useGpu,'sim_dir',sim_dir,...
@@ -39,4 +39,4 @@ dGsyn = load([sim_dir '/dGsyn.mat']); dGsyn=dGsyn.dGsyn;
 v1 = outputs.dGsyn_pre(:);
 v1 = v1(v1 > 0);
 v2 = dGsyn(dGsyn>0);
-histogram(v2-v1); xlabel('\Delta dGsyn')
+histogram(v2-v1,'binwidth',1e-10); xlabel('\Delta dGsyn')

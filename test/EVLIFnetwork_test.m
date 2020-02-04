@@ -1,6 +1,6 @@
 % ELIFnetwork_test
 clear all;
-net = EVLIFnetwork();
+net = AEVLIFnetwork();
 net.addGroup('group1',1000,'excitatory',1);
 net.addGroup('group2',1000,'excitatory',2);
 net.addGroup('group3',1000,'excitatory',3);
@@ -26,9 +26,11 @@ net.connect(1,1,'gaussian',gaussConnParams);
 net.connect(2,2,'gaussian',gaussConnParams);
 net.connect(3,3,'gaussian',gaussConnParams);
 net.connect(1,2,'random',randConnParams);
-net.connect(1,3,'random',randConnParams);
 net.connect(2,3,'random',randConnParams);
+net.connect(3,1,'random',randConnParams);
 net.connect(1,4,'random',randConnParams);
+net.connect(2,4,'random',randConnParams);
+net.connect(3,4,'random',randConnParams);
 net.connect(4,1,'random',randConnParams2);
 net.connect(4,2,'random',randConnParams2);
 net.connect(4,3,'random',randConnParams2);
@@ -40,15 +42,17 @@ spkInputParams.weightDistribution = uniformWeightDist;
 net.addSpikeGenerator('spk1',1000,'excitatory',10);
 net.connect(-1,1,'random',spkInputParams);
 
-useGpu = 0;
+useGpu = 1;
 disp(['useGPU = ' num2str(useGpu)])
 
 [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
           tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
           setupEVLIFNet(net,useGpu);
-simTime = 1;
+simTime = 5;
 nT = ceil((simTime/dt));
-
+if (useGpu)
+    nT = double(nT);
+end
 spkfid = fopen('test.bin','W');
 if (~useGpu)
     disp('compiling')
@@ -60,18 +64,20 @@ if (~useGpu)
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
     sim_dur = toc;
     fclose(spkfid);
-    disp(['loopUpdateEVLIFNetCPU: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/dt)) ' --> ' num2str((sim_dur/(simTime/dt))/dt) 'x real time'])
+    disp(['loopUpdateEVLIFNetCPU_mex: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/dt)) ' --> ' num2str((sim_dur/(simTime/dt))/dt) 'x real time'])
 else
-    compile_loopUpdateEVLIFNetGPU_fast(net.nNeurons,length(spikeGenProbs),length(cells2record));
+    compile_loopUpdateEVLIFNetGPU(net.nNeurons,length(spikeGenProbs),length(cells2record));
     tic;
-    loopUpdateEVLIFNetGPU_fast(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+    loopUpdateEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
     sim_dur = toc;
     fclose(spkfid);
-    disp(['loopUpdateEVLIFNetGPU_fast: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/simobj.dt)) ' --> ' num2str((sim_dur/(simTime/simobj.dt))/simobj.dt) 'x real time'])
+    disp(['loopUpdateEVLIFNetGPU_mex: Total sim time: ' num2str(sim_dur) '. Time per timestep = ' num2str(sim_dur/(simTime/dt)) ' --> ' num2str((sim_dur/(simTime/dt))/dt) 'x real time'])
 end
-
+if (useGpu)
+    cells2record = gather(cells2record);
+end
 % retrieve spike data and compute firing rates
 [spikeData] = readSpikes('test.bin',cells2record);
 window = .1/dt; % 100ms

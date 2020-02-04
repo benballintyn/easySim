@@ -116,7 +116,7 @@ if (useGpu)
                 if (net.is_plastic)
                     compile_loopUpdate_plasticEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
                 else
-                    compile_loopUpdateEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
+                    compile_loopUpdateEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
                 end
             end
             
@@ -134,9 +134,9 @@ if (useGpu)
                 disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
                 fclose(spkfid);
             else
-                fprintf('Calling loopUpdateEVLIFNetGPU_fast_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                fprintf('Calling loopUpdateEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
                 tic;
-                loopUpdateEVLIFNetGPU_fast_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                loopUpdateEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                             dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                             dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
                 t=toc;
@@ -151,7 +151,7 @@ if (useGpu)
                 if (net.is_plastic)
                     compile_loopUpdate_plasticAEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
                 else
-                    compile_loopUpdateAEVLIFNetGPU_fast(size(V,1),length(spikeGenProbs),length(cells2record));
+                    compile_loopUpdateAEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
                 end
             end
 
@@ -169,9 +169,9 @@ if (useGpu)
                 disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
                 fclose(spkfid);
             else
-                fprintf('Calling loopUpdateAEVLIFNetGPU_fast_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
+                fprintf('Calling loopUpdateAEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
                 tic;
-                loopUpdateAEVLIFNetGPU_fast_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
+                loopUpdateAEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
                                                 dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
                                                 dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
                 t=toc;

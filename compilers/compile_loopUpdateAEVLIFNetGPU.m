@@ -1,4 +1,4 @@
-function [] = compile_loopUpdateAEVLIFNetGPU_fast(N,nSpikeGenCells,nCells2record)
+function [] = compile_loopUpdateAEVLIFNetGPU(N,nSpikeGenCells,nCells2record)
 % This function compiles the loopUpdateAEVLIFNetGPU_fast function into CUDA
 % code and produces a mex file loopUpdateAEVLIFNetGPU_fast_mex to run a
 % simulation on the GPU.
@@ -61,6 +61,6 @@ ARGS{1}{31} = coder.typeof(0); % nT (# of timesteps to simulate)
 ARGS{1}{32} = coder.typeof(0); % file ID for spikes
 
 %% Invoke MATLAB Coder.
-codegen -config cfg loopUpdateAEVLIFNetGPU_fast -args ARGS{1}
+codegen -config cfg loopUpdateAEVLIFNetGPU -args ARGS{1}
 end
 

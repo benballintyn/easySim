@@ -6,7 +6,7 @@ net = EVLIFnetwork();
 net.addGroup('1',1000,'excitatory',1,'std_noise',1000e-12);
 
 ntimesteps = 100000;
-useGpu = true;
+useGpu = false;
 spikefile = 'spikes.bin';
 sim_dir = 'results/noise_example';
 [outputs] = easysim(net,ntimesteps,useGpu,...

@@ -1,5 +1,5 @@
-function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,dGsyn,tau_synE,...
-          tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
+function [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,tau_synI,...
+          Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
           setupEVLIFNet(net,useGpu)
 % This function initializes all of the relevant variables for simulation
 % based based on whether a GPU will be used to do the simulation or not.
@@ -41,13 +41,11 @@ if (useGpu)
     Vreset =   gpuArray(zeros(N,1,'single')); % reset membrane voltage after spike
     GsynE =    gpuArray(zeros(N,1,'single')); % total excitatory synaptic conductance
     GsynI =    gpuArray(zeros(N,1,'single')); % total inhibitory synaptic conductance
-    maxGsynE = gpuArray(zeros(N,1,'single')); % maximum total excitatory synaptic conductance
-    maxGsynI = gpuArray(zeros(N,1,'single')); % maximum total inhibitory synaptic conductance
     Iapp =     gpuArray(zeros(N,1,'single')); % Applied current
     Vth =      gpuArray(zeros(N,1,'single')); % Spike threshold
     VsynE =    gpuArray(ones(N,1,'single')); % Excitatory synaptic reversal potential
     VsynI =    gpuArray(ones(N,1,'single')); % Inhibitory synaptic reversal potential
-    dGsyn =     gpuArray(zeros(N,totalN,'single')); % synaptic 'weight' matrix (change in synaptic conductance for presynaptic spike)
+    GsynMax =  gpuArray(zeros(N,totalN,'single')); % synaptic 'weight' matrix (change in synaptic conductance for presynaptic spike)
     
     % Variables that will not change with time
     Vth0 =      gpuArray(zeros(N,1,'single')); % baseline spike threshold
@@ -59,6 +57,7 @@ if (useGpu)
     Gl =        gpuArray(zeros(N,1,'single')); % leak conductance
     El =        gpuArray(zeros(N,1,'single')); % leak reversal potential
     dth =       gpuArray(zeros(N,1,'single')); % spike generation voltage range
+    p0 =        gpuArray(zeros(totalN,1,'single')); % release probability
     std_noise = gpuArray(zeros(N,1,'single')); % standard deviation of the noise current
     
     ecells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are excitatory
@@ -74,13 +73,11 @@ else
     Vreset =   zeros(N,1);
     GsynE =    zeros(N,1);
     GsynI =    zeros(N,1);
-    maxGsynE = zeros(N,1);
-    maxGsynI = zeros(N,1);
     Iapp =     zeros(N,1);
     Vth =      zeros(N,1);
     VsynE =    ones(N,1);
     VsynI =    ones(N,1);
-    dGsyn =         zeros(N,totalN);
+    GsynMax =  zeros(N,totalN);
     
     % Variables that will not change with time
     Vth0 =          zeros(N,1);
@@ -92,6 +89,7 @@ else
     Gl =            zeros(N,1);
     El =            zeros(N,1);
     dth =           zeros(N,1);
+    p0 =            zeros(totalN,1);
     std_noise =     zeros(N,1);
     ecells =        zeros(totalN,1);
     icells =        zeros(totalN,1);
@@ -153,8 +151,6 @@ for i=1:net.nGroups
     Vth_max(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Vth_max,net.groupInfo(i).std_Vth_max,groupN,1);
     VsynE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_VsynE,net.groupInfo(i).std_VsynE,groupN,1);
     VsynI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_VsynI,net.groupInfo(i).std_VsynI,groupN,1);
-    maxGsynE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_max_GsynE,net.groupInfo(i).std_max_GsynE,groupN,1);
-    maxGsynI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_max_GsynI,net.groupInfo(i).std_max_GsynI,groupN,1);
     tau_ref(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_ref,net.groupInfo(i).std_tau_ref,groupN,1);
     tau_synE(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_synE,net.groupInfo(i).std_tau_synE,groupN,1);
     tau_synI(preStart:preEnd) = normrnd(net.groupInfo(i).mean_tau_synI,net.groupInfo(i).std_tau_synI,groupN,1);
@@ -162,6 +158,7 @@ for i=1:net.nGroups
     Gl(preStart:preEnd) = normrnd(net.groupInfo(i).mean_Gl,net.groupInfo(i).std_Gl,groupN,1);
     El(preStart:preEnd) = normrnd(net.groupInfo(i).mean_El,net.groupInfo(i).std_El,groupN,1);
     dth(preStart:preEnd) = normrnd(net.groupInfo(i).mean_dth,net.groupInfo(i).std_dth,groupN,1);
+    p0(preStart:preEnd) = normrnd(net.groupInfo(i).mean_p0,net.groupInfo(i).std_p0,groupN,1);
     std_noise(preStart:preEnd) = net.groupInfo(i).std_noise;
     
     % Go through all of this groups targets and call the .genConn() method
@@ -171,8 +168,8 @@ for i=1:net.nGroups
     for j=1:length(targets)
         postStart = net.groupInfo(targets(j)).start_ind;
         postEnd = net.groupInfo(targets(j)).end_ind;
-        curdGsyn = net.groupInfo(i).connections(j).genConn();
-        dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
+        curGsynMax = net.groupInfo(i).connections(j).genConn();
+        GsynMax(postStart:postEnd,preStart:preEnd) = curGsynMax;
     end
 end
 
@@ -181,15 +178,15 @@ end
 for i=1:net.nSpikeGenerators
     preStart = net.spikeGeneratorInfo(i).start_ind;
     preEnd = net.spikeGeneratorInfo(i).end_ind;
+    groupN = preEnd - preStart + 1;
+    p0(preStart:preEnd) = normrnd(net.spikeGeneratorInfo(i).mean_p0,net.spikeGeneratorInfo(i).std_p0,groupN,1);
+    
     targets = net.spikeGeneratorInfo(i).targets;
     for j=1:length(net.spikeGeneratorInfo(i).targets)
         postStart = net.groupInfo(targets(j)).start_ind;
         postEnd = net.groupInfo(targets(j)).end_ind;
-        curdGsyn = net.spikeGeneratorInfo(i).connections(j).genConn();
-        dGsyn(postStart:postEnd,preStart:preEnd) = curdGsyn;
-        if (net.spikeGeneratorInfo(i).connectionParams{j}.is_plastic)
-            is_plastic(postStart:postEnd,preStart:preEnd) = true;
-        end
+        curGsynMax = net.spikeGeneratorInfo(i).connections(j).genConn();
+        GsynMax(postStart:postEnd,preStart:preEnd) = curGsynMax;
     end
 end
 
@@ -199,18 +196,17 @@ if (useGpu)
 else
     minval=1e-100;
 end
-maxGsynE = max(minval,maxGsynE);
-maxGsynI = max(minval,maxGsynI);
 tau_ref = max(minval,tau_ref);
 tau_synE = max(minval,tau_synE);
 tau_synI = max(minval,tau_synI);
 Cm = max(minval,Cm);
 Gl = max(0,Gl);
 dth = max(0,dth);
+p0 = max(0,p0);
 % auto-detect dt as 10x smaller than smallest time constant
 dt = gather(10^(floor(log10(min(min(tau_ref),min(min(tau_synE),min(tau_synI)))/10))));
 std_noise = max(0,std_noise/sqrt(dt));
-dGsyn = max(0,dGsyn);
+GsynMax = max(0,GsynMax);
 
 % set spike generator spike probabilities
 for i=1:net.nSpikeGenerators

@@ -64,13 +64,17 @@ classdef AEVLIFnetwork < handle
                 'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
                 'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},'std_tau_synI',{},...
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
-                'std_El',{},'mean_dth',{},'std_dth',{},'mean_A2plus',{},'std_A2plus',{},...
-                'mean_A3plus',{},'std_A3plus',{},'mean_A2minus',{},'std_A2minus',{},...
+                'std_El',{},'mean_dth',{},'std_dth',{},'mean_tau_D',{},'std_tau_D',{},...
+                'mean_tau_F',{},'std_tau_F',{},'mean_p0',{},'std_p0',{},'mean_f_fac',{},'std_f_fac',{},...
+                'mean_A2plus',{},'std_A2plus',{},'mean_A3plus',{},'std_A3plus',{},'mean_A2minus',{},'std_A2minus',{},...
                 'mean_A3minus',{},'std_A3minus',{},'mean_tau_plus',{},'std_tau_plus',{},...
                 'mean_tau_x',{},'std_tau_x',{},'mean_tau_minus',{},'std_tau_minus',{},...
                 'mean_tau_y',{},'std_tau_y',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
-                'firingRate',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
+                'firingRate',{},'mean_tau_D',{},'std_tau_D',{},'mean_tau_F',{},'std_tau_F',{},'mean_p0',{},'std_p0',{},...
+                'mean_f_fac',{},'std_f_fac',{},'mean_A2plus',{},'std_A2plus',{},'mean_A3plus',{},'std_A3plus',{},...
+                'mean_tau_plus',{},'std_tau_plus',{},'mean_tau_x',{},'std_tau_x',{},...
+                'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
             obj.is_plastic = false;
         end
@@ -237,7 +241,8 @@ classdef AEVLIFnetwork < handle
                 'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
                 'mean_tau_synE','std_tau_synE','mean_tau_synI','std_tau_synI',...
                 'mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
-                'std_El','mean_dth','std_dth','mean_A2plus','std_A2plus',...
+                'std_El','mean_dth','mean_tau_D','std_tau_D','mean_tau_F','std_tau_F',...
+                'mean_p0','std_p0','mean_f_fac','std_f_fac','std_dth','mean_A2plus','std_A2plus',...
                 'mean_A3plus','std_A3plus','mean_A2minus','std_A2minus',...
                 'mean_A3minus','std_A3minus','mean_tau_plus','std_tau_plus',...
                 'mean_tau_x','std_tau_x','mean_tau_minus','std_tau_minus',...
@@ -287,6 +292,14 @@ classdef AEVLIFnetwork < handle
             default_std_El = 0;
             default_mean_dth = .002; %2mV
             default_std_dth = 0;
+            default_mean_tau_D = .25; % 250ms (Paul Miller Textbook)
+            default_std_tau_D = 0;
+            default_mean_tau_F = .25; % 250ms (Paul Miller Textbook)
+            default_std_tau_F = 0;
+            default_mean_p0 = .4; % (Biro et al., 2005)
+            default_std_p0 = 0;
+            default_mean_f_fac = .25; % (Paul Miller Textbook)
+            default_std_f_fac = 0;
             default_mean_A2plus = 8.8e-11; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
             default_std_A2plus = 0;
             default_mean_A3plus = 5.3e-2; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
@@ -353,6 +366,14 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'std_El',default_std_El,validNumCheck);
             addParameter(p,'mean_dth',default_mean_dth,validNumCheck);
             addParameter(p,'std_dth',default_std_dth,validNumCheck);
+            addParameter(p,'mean_tau_D',default_mean_tau_D,positiveNoInfCheck);
+            addParameter(p,'std_tau_D',default_std_tau_D,positiveNoInfCheck);
+            addParameter(p,'mean_tau_F',default_mean_tau_F,positiveNoInfCheck);
+            addParameter(p,'std_tau_F',default_std_tau_F,positiveNoInfCheck);
+            addParameter(p,'mean_p0',default_mean_p0,nonNegativeNoInfCheck);
+            addParameter(p,'std_p0',default_std_p0,positiveNoInfCheck);
+            addParameter(p,'mean_f_fac',default_mean_f_fac,nonNegativeNoInfCheck);
+            addParameter(p,'std_f_fac',default_std_f_fac,positiveNoInfCheck);
             addParameter(p,'mean_A2plus',default_mean_A2plus,nonNegativeNoInfCheck);
             addParameter(p,'std_A2plus',default_std_A2plus,nonNegativeNoInfCheck);
             addParameter(p,'mean_A3plus',default_mean_A3plus,nonNegativeNoInfCheck);
@@ -432,6 +453,14 @@ classdef AEVLIFnetwork < handle
             %
             %   firingRate - firing rate of this group in Hz
             p = inputParser;
+            default_mean_tau_D = .25; % 250ms (Paul Miller Textbook)
+            default_std_tau_D = 0;
+            default_mean_tau_F = .25; % 250ms (Paul Miller Textbook)
+            default_std_tau_F = 0;
+            default_mean_p0 = .4; % (Biro et al., 2005)
+            default_std_p0 = 0;
+            default_mean_f_fac = .25; % (Paul Miller Textbook)
+            default_std_f_fac = 0;
             default_mean_A2plus = 8.8e-11; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
             default_std_A2plus = 0;
             default_mean_A3plus = 5.3e-2; % Visual Cortex nearest spike full model (Pfister & Gerstner, 2006)
@@ -447,6 +476,14 @@ classdef AEVLIFnetwork < handle
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
             addRequired(p,'firingRate',nonNegativeNoInfCheck);
+            addParameter(p,'mean_tau_D',default_mean_tau_D,positiveNoInfCheck);
+            addParameter(p,'std_tau_D',default_std_tau_D,positiveNoInfCheck);
+            addParameter(p,'mean_tau_F',default_mean_tau_F,positiveNoInfoCheck);
+            addParameter(p,'std_tau_F',default_std_tau_F,positiveNoInfCheck);
+            addParameter(p,'mean_p0',default_mean_p0,nonNegativeNoInfCheck);
+            addParameter(p,'std_p0',default_std_p0,positiveNoInfCheck);
+            addParameter(p,'mean_f_fac',default_mean_f_fac,nonNegativeNoInfCheck);
+            addParameter(p,'std_f_fac',default_std_f_fac,positiveNoInfCheck);
             addParameter(p,'mean_A2plus',default_mean_A2plus,nonNegativeNoInfCheck);
             addParameter(p,'std_A2plus',default_std_A2plus,nonNegativeNoInfCheck);
             addParameter(p,'mean_A3plus',default_mean_A3plus,nonNegativeNoInfCheck);
@@ -456,17 +493,22 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'mean_tau_x',default_mean_tau_x,positiveNoInfCheck);
             addParameter(p,'std_tau_x',default_std_tau_x,nonNegativeNoInfCheck)
             
+            
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
-            obj.nSpikeGeneratorNeurons = obj.nSpikeGeneratorNeurons + N;
             info.id = -obj.nSpikeGenerators;
-            info.name = name;
-            info.N = N;
-            info.neuronType = neuronType;
             info.isExcitatory = strcmp(neuronType,'excitatory');
             info.isInhibitory = strcmp(neuronType,'inhibitory');
-            info.firingRate = firingRate;
             info.start_ind = []; % to be assigned later
             info.end_ind = []; % to be assigned later
+            
+            names = fieldnames(p.Results);
+            for i=1:length(names)
+                if (any(strcmp(names{i},{'xmin','xmax','ymin','ymax'})))
+                    continue;
+                else
+                    info.(names{i}) = p.Results.(names{i});
+                end
+            end
             
             % empty holders for connections
             info.targets = [];

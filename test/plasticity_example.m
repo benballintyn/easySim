@@ -35,8 +35,8 @@ window = .1/outputs.dt; % 100ms
 downsampleFactor = 10;
 frs = getFiringRates(spikeData,length(outputs.cells2record),nT,outputs.dt,downsampleFactor,window);
 
-dGsyn = load([sim_dir '/dGsyn.mat']); dGsyn=dGsyn.dGsyn;
-v1 = outputs.dGsyn_pre(:);
+GsynMax = load([sim_dir '/GsynMax.mat']); GsynMax=GsynMax.GsynMax;
+v1 = outputs.GsynMax_pre(:);
 v1 = v1(v1 > 0);
-v2 = dGsyn(dGsyn>0);
-histogram(v2-v1,'binwidth',1e-10); xlabel('\Delta dGsyn')
+v2 = GsynMax(GsynMax>0);
+histogram(v2-v1,'binwidth',1e-10); xlabel('\Delta GsynMax')

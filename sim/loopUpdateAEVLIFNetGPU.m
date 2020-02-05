@@ -1,6 +1,6 @@
-function [] = loopUpdateAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                            dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
+function [] = loopUpdateAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,...
+                                     GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                     dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun; % for code generation
 
@@ -61,12 +61,18 @@ for i=1:nT
     GsynI = arrayfun(@plus,GsynI,dGsynIdt*dt);
 
     if (areAnySpikes)
-        dGsynE_sum = sum(dGsyn(:,e_spiked),2); % increment the excitatory synaptic conductance of neurons receiving an excitatory spike
-        dGsynI_sum = sum(dGsyn(:,i_spiked),2); % increment the inhibitory synaptic conductance of neurons recieving an inhibitory spike
+        % multiply release probability with maximum synaptic conductance
+        dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
+        dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
+        % sum across all inputs
+        dGsynE_sum = sum(dGsynE,2);
+        dGsynI_sum = sum(dGsynI,2);
+        %dGsynE_sum = sum(GsynMax(:,e_spiked),2); % increment the excitatory synaptic conductance of neurons receiving an excitatory spike
+        %dGsynI_sum = sum(dGsyn(:,i_spiked),2); % increment the inhibitory synaptic conductance of neurons recieving an inhibitory spike
         GsynE = arrayfun(@plus,GsynE,dGsynE_sum);
-        GsynE = arrayfun(@min,GsynE,maxGsynE);
+        %GsynE = arrayfun(@min,GsynE,maxGsynE);
         GsynI = arrayfun(@plus,GsynI,dGsynI_sum);
-        GsynI = arrayfun(@min,GsynI,maxGsynI);
+        %GsynI = arrayfun(@min,GsynI,maxGsynI);
     end
     
     % Compute total synaptic current for each neuron
@@ -76,6 +82,7 @@ for i=1:nT
     curIapp = Iapp;
     curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
     
+    % update membrane voltages
     f1 = (1./Cm); % (1./Cm)
     f2 = arrayfun(@minus,El,V); % (El - V)
     f3 = arrayfun(@minus,V,Vth); % (V - Vth)
@@ -91,6 +98,7 @@ for i=1:nT
     
     V = arrayfun(@plus,V,dVdt*dt); % V = V + dVdt*dt
     V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
+    
     % if there are any spikes from SIMULATED neurons, write them to file
     if (areSimSpikes)
         if (useRecord)
@@ -100,7 +108,6 @@ for i=1:nT
             fwrite(spkfid,find(spiked(cells2record)),'int32'); 
         end
     end
-    
 end
 fprintf('%i simulated spikes\n',int32(nSimulatedSpikes));
 fprintf('%i generated spikes\n',int32(nGeneratedSpikes));

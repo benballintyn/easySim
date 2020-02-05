@@ -1,6 +1,6 @@
-function [] = loopUpdateEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,maxGsynE,maxGsynI,...
-                            dGsyn,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                            dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
+function [] = loopUpdateEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,...
+                                    GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
+                                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun; % for code generation
 
@@ -52,12 +52,18 @@ for i=1:nT
     GsynI = arrayfun(@plus,GsynI,dGsynIdt*dt);
 
     if (areAnySpikes)
-        dGsynE_sum = sum(dGsyn(:,e_spiked),2); % increment the excitatory synaptic conductance of neurons receiving an excitatory spike
-        dGsynI_sum = sum(dGsyn(:,i_spiked),2); % increment the inhibitory synaptic conductance of neurons recieving an inhibitory spike
+        % multiply release probability with maximum synaptic conductance
+        dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
+        dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
+        % sum across all inputs
+        dGsynE_sum = sum(dGsynE,2);
+        dGsynI_sum = sum(dGsynI,2);
+        %dGsynE_sum = sum(GsynMax(:,e_spiked),2); % increment the excitatory synaptic conductance of neurons receiving an excitatory spike
+        %dGsynI_sum = sum(dGsyn(:,i_spiked),2); % increment the inhibitory synaptic conductance of neurons recieving an inhibitory spike
         GsynE = arrayfun(@plus,GsynE,dGsynE_sum);
-        GsynE = arrayfun(@min,GsynE,maxGsynE);
+        %GsynE = arrayfun(@min,GsynE,maxGsynE);
         GsynI = arrayfun(@plus,GsynI,dGsynI_sum);
-        GsynI = arrayfun(@min,GsynI,maxGsynI);
+        %GsynI = arrayfun(@min,GsynI,maxGsynI);
     end
     
     % Compute total synaptic current for each neuron

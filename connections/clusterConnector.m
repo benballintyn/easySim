@@ -31,21 +31,21 @@ classdef clusterConnector < connectionType
             %                     between clusters
             %   groupInfo       - struct array from network object
             %                     containing information about all groups
-            
-            if (preGroup ~= postGroup)
-                error('clusterConnector only supports connecting a group to itself')
-            end
             obj.groupID = groupID;
             obj.intraConnProb = intraConnProb;
             obj.interConnProb = interConnProb;
             obj.intraWeightDist = intraWeightDist;
             obj.interWeightDist = interWeightDist;
-            obj.nNeurons = groupInfo(obj.groupID).end_ind - groupInfo(obj.groupID).start_ind + 1;
-            neurons_per_cluster = floor(obj.nNeurons / nClusters);
-            ids=1:nClusters-1;
-            remainder = mod(obj.nNeurons,nClusters);
+            obj.nClusters = nClusters;
+            obj.nNeurons = groupInfo(obj.groupID).N;
+            neurons_per_cluster = floor(obj.nNeurons / obj.nClusters);
+            ids=1:obj.nClusters-1;
+            remainder = mod(obj.nNeurons,obj.nClusters);
+            if (remainder == 0)
+                remainder = neurons_per_cluster;
+            end
             obj.clusterIDs = repelem(ids,neurons_per_cluster);
-            obj.clusterIDs = [obj.clusterIDs repelem(nClusters,remainder)];
+            obj.clusterIDs = [obj.clusterIDs repelem(obj.nClusters,remainder)];
         end
         
         function dGsynMat = genConn(obj)

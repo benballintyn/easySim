@@ -70,6 +70,7 @@ addParameter(p,'timeStepSize',.0001,isPositiveNumber)
 addParameter(p,'plasticity_type','nearest',@ischar)
 parse(p,net,nT,useGpu,varargin{:})
 outputs.run_params = p.Results;
+plasticity_type = p.Results.plasticity_type;
 
 % make the directory to save simulation data if it does not exist
 if (~isempty(p.Results.sim_dir))
@@ -79,226 +80,81 @@ if (~isempty(p.Results.sim_dir))
 end
 sim_dir = p.Results.sim_dir;
 
-% Check the network type then initialize the relevant variables
-switch class(net)
-    case 'EVLIFnetwork'
-        if (net.is_plastic)
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,...
-            tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-            is_plastic,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
-            setup_plasticEVLIFNet(net,useGpu);
-            outputs.GsynMax_pre = GsynMax;
-        else
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,tau_synI,...
-            Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-            setupEVLIFNet(net,useGpu);
-        end
-    case 'AEVLIFnetwork'
-        if (net.is_plastic)
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,...
-            tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-            is_plastic,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y] = ...
-            setup_plasticAEVLIFNet(net,useGpu);
-            outputs.dGsyn_pre = GsynMax;
-        else
-            [V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,...
-            tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record] = ...
-            setupAEVLIFNet(net,useGpu);
-        end
+% Setup/initialize all relevant variables. Unused variables are set to []
+[V,Vreset,Cm,Gl,El,Vth,Vth0,Vth_max,tau_ref,dth,p0,GsynE,GsynI,VsynE,VsynI,tau_synE,tau_synI,...
+          Iapp,std_noise,GsynMax,Isra,tau_sra,a,b,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+          ecells,icells,spikeGenProbs,cells2record,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+          tau_plus,tau_x,tau_minus,tau_y,is_plastic,C,dt] = ...
+          setupNet(net,useGpu);
+outputs.GsynMax_pre = GsynMax;
+
+if (p.Results.recompile)
+    compileSimulator(net,useGpu,length(cells2record));
 end
+
+spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
 if (useGpu)
     if (~any(strcmp(p.UsingDefaults,'timeStepSize')))
         dt = single(p.Results.timeStepSize);
     end
     switch class(net)
         case 'EVLIFnetwork'
-            if (p.Results.recompile)
-                if (net.is_plastic)
-                    compile_loopUpdate_plasticEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
-                else
-                    compile_loopUpdateEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
-                end
-            end
-            
-            spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            if (net.is_plastic)
-                fprintf('Calling loopUpdate_plasticEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                plasticity_type = p.Results.plasticity_type;
-                tic;
-                GsynMax=loopUpdate_plasticEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,...
-                        GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                        dt,ecells,icells,spikeGenProbs,cells2record,is_plastic,plasticity_type,...
-                        C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
-                t=toc;
-                disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-                fclose(spkfid);
-            else
-                fprintf('Calling loopUpdateEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                tic;
-                loopUpdateEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,...
-                GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                t=toc;
-                disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-                fclose(spkfid);
-            end
-            save([p.Results.sim_dir '/net.mat'],'net','-mat')
-            save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
-            cells2record = gather(cells2record);
+            tic;
+            [GsynMax] = runEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+              VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+              p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
+            t=toc;
         case 'AEVLIFnetwork'
-            if (p.Results.recompile)
-                if (net.is_plastic)
-                    compile_loopUpdate_plasticAEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
-                else
-                    compile_loopUpdateAEVLIFNetGPU(size(V,1),length(spikeGenProbs),length(cells2record));
-                end
-            end
-
-            spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            if (net.is_plastic)
-                fprintf('Calling loopUpdated_plasticAEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                plasticity_type = p.Results.plasticity_type;
-                tic;
-                GsynMax = loopUpdate_plasticAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
-                          Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,tau_synI,...
-                          Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-                          is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
-                          tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
-                t=toc;
-                disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-                fclose(spkfid);
-            else
-                fprintf('Calling loopUpdateAEVLIFNetGPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                tic;
-                loopUpdateAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,...
-                GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                t=toc;
-                disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-                fclose(spkfid);
-            end
-            save([p.Results.sim_dir '/net.mat'],'net','-mat')
-            save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
-            cells2record = gather(cells2record);
+            tic;
+            [GsynMax] = runAEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+              Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,p0,tau_synE,tau_synI,...
+              Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
+            t=toc;
     end
+    fclose(spkfid);
+    disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
+    save([p.Results.sim_dir '/net.mat'],'net','-mat')
+    save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
+    cells2record = gather(cells2record);
 else
     if (~any(strcmp(p.UsingDefaults,'timeStepSize')))
         dt = p.Results.timeStepSize;
     end
     switch class(net)
         case 'EVLIFnetwork'
-            if (p.Results.recompile)
-                if (p.Results.recordVars)
-                    if (net.is_plastic)
-                        compile_loopUpdate_plasticEVLIFNetCPU_recordVars();
-                    else
-                        compile_loopUpdateEVLIFNetCPU_recordVars();
-                    end
-                else
-                    if (net.is_plastic)
-                        compile_loopUpdate_plasticEVLIFNetCPU();
-                    else
-                        compile_loopUpdateEVLIFNetCPU();
-                    end
-                end
-            end
-
-            spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            
-            if (p.Results.recordVars)
-                if (net.is_plastic)
-                else
-                    fprintf('Calling loopUpdateEVLIFNetCPU_recordV_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    [vRecord,vthRecord,iappRecord] = loopUpdateEVLIFNetCPU_recordVars(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,...
-                                                     GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                                                     dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                    t=toc;
-                    outputs.voltage_recording = vRecord;
-                    outputs.threshold_recording = vthRecord;
-                    outputs.iapp_recording = iappRecord;
-                end
-            else
-                if (net.is_plastic)
-                    plasticity_type = p.Results.plasticity_type;
-                    fprintf('Calling loopUpdate_plasticEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    GsynMax = loopUpdate_plasticEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
-                              VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,tau_synI,...
-                              Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-                              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
-                              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
-                    t=toc;
-                else
-                    fprintf('Calling loopUpdateEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    loopUpdateEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,...
-                    GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                    t=toc;
-                end
-            end
-            disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-            fclose(spkfid);
-            save([p.Results.sim_dir '/net.mat'],'net','-mat')
-            save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
+            recordVars = p.Results.recordVars;
+            tic;
+            [GsynMax,recordV,recordVth,recordIsyn,recordIapp,recordD,recordF] = runEVLIFNetCPU_mex(V,Vreset,...
+              tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+              p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid,recordVars);
+            t=toc;         
         case 'AEVLIFnetwork'
-            if (p.Results.recompile)
-                if (p.Results.recordVars)
-                    if (net.is_plastic)
-                        compile_loopUpdate_plasticAEVLIFNetCPU_recordVars();
-                    else
-                        compile_loopUpdateAEVLIFNetCPU_recordVars();
-                    end
-                else
-                    if (net.is_plastic)
-                        compile_loopUpdate_plasticAEVLIFNetCPU();
-                    else
-                        compile_loopUpdateAEVLIFNetCPU();
-                    end
-                end
-            end
-
-            spkfid = fopen([p.Results.sim_dir '/' p.Results.spikefile],'W');
-            
-            if (p.Results.recordVars)
-                if (net.is_plastic)
-                else
-                    fprintf('Calling loopUpdateAEVLIFNetCPU_recordV_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    [vRecord,vthRecord,iappRecord] = loopUpdateAEVLIFNetCPU_recordVars(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,...
-                                                     GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                                                     dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                    t=toc;
-                    outputs.voltage_recording = vRecord;
-                    outputs.threshold_recording = vthRecord;
-                    outputs.iapp_recording = iappRecord;
-                end
-            else
-                if (net.is_plastic)
-                    plasticity_type = p.Results.plasticity_type;
-                    fprintf('Calling loopUpdate_plasticAEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    GsynMax = loopUpdate_plasticAEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
-                              Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,p0,tau_synE,tau_synI,...
-                              Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-                              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
-                              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
-                    t=toc;
-                else
-                    fprintf('Calling loopUpdateAEVLIFNetCPU_mex for %1$i timesteps with dt = %2$e. \nSpikes will be saved in %3$s\n',nT,dt,[p.Results.sim_dir '/' p.Results.spikefile])
-                    tic;
-                    loopUpdateAEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,...
-                    GsynMax,p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,...
-                    dt,ecells,icells,spikeGenProbs,cells2record,nT,spkfid);
-                    t=toc;
-                end
-            end
-            disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
-            fclose(spkfid);
-            save([p.Results.sim_dir '/net.mat'],'net','-mat')
-            save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
+            recordVars = p.Results.recordVars;
+            tic;
+            [GsynMax,recordV,recordVth,recordIsyn,recordIapp,recordD,recordF] = runAEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+              Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+              p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              tau_plus,tau_x,tau_minus,tau_y,nT,spkfid,recordVars);
+            t=toc;
     end
+    outputs.GsynMax = GsynMax;
+    outputs.V_recording = recordV;
+    outputs.Vth_recording = recordVth;
+    outputs.Isyn_recording = recordIsyn;
+    outputs.Iapp_recording = recordIapp;
+    outputs.D_recording = recordD;
+    outputs.F_recording = recordF;
+    disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
+    fclose(spkfid);
+    save([p.Results.sim_dir '/net.mat'],'net','-mat')
+    save([p.Results.sim_dir '/GsynMax.mat'],'GsynMax','-mat')
 end
 outputs.dt = dt;
 outputs.cells2record = cells2record;

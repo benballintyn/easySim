@@ -9,6 +9,7 @@ classdef AEVLIFnetwork < handle
        coordinateFrames
        spikeGeneratorInfo
        is_plastic
+       is_dynamic
     end
     
     methods
@@ -53,15 +54,14 @@ classdef AEVLIFnetwork < handle
             
             obj.nGroups = 0;
             obj.nSpikeGenerators = 0;
-            %obj.groupInfo = struct(
             obj.nNeurons = 0;
+            obj.nSpikeGeneratorNeurons = 0;
             obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
-                'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
+                'coordinateFrame',{},'depressed_synapses',{},'facilitating_synapses',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
                 'std_noise',{},'mean_V0',{},'std_V0',{},'mean_Vreset',{},'std_Vreset',{},'mean_Vth0',{},'std_Vth0',{},...
                 'mean_Vth_max',{},'std_Vth_max',{},'mean_tau_ref',{},'std_tau_ref',{},...
                 'mean_tau_sra',{},'std_tau_sra',{},'mean_a',{},'std_a',{},'mean_b',{},'std_b',{},...
                 'mean_VsynE',{},'std_VsynE',{},'mean_VsynI',{},'std_VsynI',{},...
-                'mean_max_GsynE',{},'std_max_GsynE',{},'mean_max_GsynI',{},'std_max_GsynI',{},...
                 'mean_tau_synE',{},'std_tau_synE',{},'mean_tau_synI',{},'std_tau_synI',{},...
                 'mean_Cm',{},'std_Cm',{},'mean_Gl',{},'std_Gl',{},'mean_El',{},...
                 'std_El',{},'mean_dth',{},'std_dth',{},'mean_tau_D',{},'std_tau_D',{},...
@@ -71,7 +71,7 @@ classdef AEVLIFnetwork < handle
                 'mean_tau_x',{},'std_tau_x',{},'mean_tau_minus',{},'std_tau_minus',{},...
                 'mean_tau_y',{},'std_tau_y',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
-                'firingRate',{},'mean_tau_D',{},'std_tau_D',{},'mean_tau_F',{},'std_tau_F',{},'mean_p0',{},'std_p0',{},...
+                'firingRate',{},'facilitating_synapses',{},'depressed_synapses',{},'mean_tau_D',{},'std_tau_D',{},'mean_tau_F',{},'std_tau_F',{},'mean_p0',{},'std_p0',{},...
                 'mean_f_fac',{},'std_f_fac',{},'mean_A2plus',{},'std_A2plus',{},'mean_A3plus',{},'std_A3plus',{},...
                 'mean_tau_plus',{},'std_tau_plus',{},'mean_tau_x',{},'std_tau_x',{},...
                 'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
@@ -233,12 +233,11 @@ classdef AEVLIFnetwork < handle
             
             % ordered field names
             orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
-                'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
+                'coordinateFrame','depressed_synapses','facilitating_synapses','start_ind','end_ind','targets','connections','connectionParams',...
                 'std_noise','mean_V0','std_V0','mean_Vreset','std_Vreset','mean_Vth0','std_Vth0',...
                 'mean_Vth_max','std_Vth_max','mean_tau_ref','std_tau_ref',...
                 'mean_tau_sra','std_tau_sra','mean_a','std_a','mean_b','std_b',...
                 'mean_VsynE','std_VsynE','mean_VsynI','std_VsynI',...
-                'mean_max_GsynE','std_max_GsynE','mean_max_GsynI','std_max_GsynI',...
                 'mean_tau_synE','std_tau_synE','mean_tau_synI','std_tau_synI',...
                 'mean_Cm','std_Cm','mean_Gl','std_Gl','mean_El',...
                 'std_El','mean_dth','mean_tau_D','std_tau_D','mean_tau_F','std_tau_F',...
@@ -276,10 +275,6 @@ classdef AEVLIFnetwork < handle
             default_std_VsynE = 0;
             default_mean_VsynI = -.07; % -80mV
             default_std_VsynI = 0;
-            default_mean_max_GsynE = 10e-6; % 10uS
-            default_std_max_GsynE = 0;
-            default_mean_max_GsynI = 15e-6; % 15uS
-            default_std_max_GsynI = 0;
             default_mean_tau_synE = 20e-3; % 10ms
             default_std_tau_synE = 0;
             default_mean_tau_synI = 10e-3; % 1ms
@@ -325,6 +320,8 @@ classdef AEVLIFnetwork < handle
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
             addRequired(p,'coordinateFrame',positiveNoInfCheck);
+            addParameter(p,'depressed_synapses',false,@islogical);
+            addParameter(p,'facilitating_synapses',false,@islogical);
             addParameter(p,'xmin',defaultXmin,validNumCheck);
             addParameter(p,'xmax',defaultXmax,validNumCheck);
             addParameter(p,'ymin',defaultYmin,validNumCheck);
@@ -350,10 +347,6 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'std_VsynE',default_std_VsynE,validNumCheck);
             addParameter(p,'mean_VsynI',default_mean_VsynI,validNumCheck);
             addParameter(p,'std_VsynI',default_std_VsynI,validNumCheck);
-            addParameter(p,'mean_max_GsynE',default_mean_max_GsynE,validNumCheck);
-            addParameter(p,'std_max_GsynE',default_std_max_GsynE,validNumCheck);
-            addParameter(p,'mean_max_GsynI',default_mean_max_GsynI,validNumCheck);
-            addParameter(p,'std_max_GsynI',default_std_max_GsynI,validNumCheck);
             addParameter(p,'mean_tau_synE',default_mean_tau_synE,validNumCheck);
             addParameter(p,'std_tau_synE',default_std_tau_synE,validNumCheck);
             addParameter(p,'mean_tau_synI',default_mean_tau_synI,validNumCheck);
@@ -441,6 +434,11 @@ classdef AEVLIFnetwork < handle
             % reorder field names in the groupInfo for this group
             s = orderfields(groupInfo,orderedFieldNames);
             obj.groupInfo(obj.nGroups) = s;
+            
+            % check if this group has dynamic synapses
+            if (p.Results.depressed_synapses || p.Results.facilitating_synapses)
+                obj.is_dynamic = true;
+            end
         end
         
         function addSpikeGenerator(obj,name,N,neuronType,firingRate)
@@ -453,6 +451,7 @@ classdef AEVLIFnetwork < handle
             %
             %   firingRate - firing rate of this group in Hz
             p = inputParser;
+            validNeuronTypes = {'excitatory','inhibitory'};
             default_mean_tau_D = .25; % 250ms (Paul Miller Textbook)
             default_std_tau_D = 0;
             default_mean_tau_F = .25; % 250ms (Paul Miller Textbook)
@@ -476,6 +475,8 @@ classdef AEVLIFnetwork < handle
             addRequired(p,'N',positiveNoInfCheck);
             addRequired(p,'neuronType',checkNeuronType);
             addRequired(p,'firingRate',nonNegativeNoInfCheck);
+            addParameter(p,'depressed_synapses',false,@islogical);
+            addParameter(p,'facilitating_synapses',false,@islogical);
             addParameter(p,'mean_tau_D',default_mean_tau_D,positiveNoInfCheck);
             addParameter(p,'std_tau_D',default_std_tau_D,positiveNoInfCheck);
             addParameter(p,'mean_tau_F',default_mean_tau_F,positiveNoInfoCheck);
@@ -492,12 +493,15 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'std_tau_plus',default_std_tau_plus,nonNegativeNoInfCheck);
             addParameter(p,'mean_tau_x',default_mean_tau_x,positiveNoInfCheck);
             addParameter(p,'std_tau_x',default_std_tau_x,nonNegativeNoInfCheck)
-            
+            parse(p,name,N,neuronType,firingRate,varargin{:})
             
             obj.nSpikeGenerators = obj.nSpikeGenerators + 1;
+            obj.nSpikeGeneratorNeurons = obj.nSpikeGeneratorNeurons + N;
+            info.name = p.Results.name;
             info.id = -obj.nSpikeGenerators;
             info.isExcitatory = strcmp(neuronType,'excitatory');
             info.isInhibitory = strcmp(neuronType,'inhibitory');
+            info.firingRate = p.Results.firingRate;
             info.start_ind = []; % to be assigned later
             info.end_ind = []; % to be assigned later
             
@@ -515,6 +519,11 @@ classdef AEVLIFnetwork < handle
             info.connections = [];
             info.connectionParams = {};
             obj.spikeGeneratorInfo(obj.nSpikeGenerators) = info;
+            
+            % check if this group has dynamic synapses
+            if (p.Results.depressed_synapses || p.Results.facilitating_synapses)
+                obj.is_dynamic = true;
+            end
         end
         
         function connect(obj,src_id,tgt_id,connType,connParams)

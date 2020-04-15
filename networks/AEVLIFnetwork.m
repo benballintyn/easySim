@@ -77,6 +77,7 @@ classdef AEVLIFnetwork < handle
                 'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
             obj.is_plastic = false;
+            obj.is_dynamic = false;
         end
         
         function addGroup(obj,name,N,neuronType,coordinateFrame,varargin)
@@ -441,7 +442,7 @@ classdef AEVLIFnetwork < handle
             end
         end
         
-        function addSpikeGenerator(obj,name,N,neuronType,firingRate)
+        function addSpikeGenerator(obj,name,N,neuronType,firingRate,varargin)
             % addSpikeGenerator(name,N,neuronType,firingRate)
             %   name       - string name for this spikeGenerator group
             %
@@ -479,7 +480,7 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'facilitating_synapses',false,@islogical);
             addParameter(p,'mean_tau_D',default_mean_tau_D,positiveNoInfCheck);
             addParameter(p,'std_tau_D',default_std_tau_D,positiveNoInfCheck);
-            addParameter(p,'mean_tau_F',default_mean_tau_F,positiveNoInfoCheck);
+            addParameter(p,'mean_tau_F',default_mean_tau_F,positiveNoInfCheck);
             addParameter(p,'std_tau_F',default_std_tau_F,positiveNoInfCheck);
             addParameter(p,'mean_p0',default_mean_p0,nonNegativeNoInfCheck);
             addParameter(p,'std_p0',default_std_p0,positiveNoInfCheck);

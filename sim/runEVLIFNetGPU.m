@@ -1,4 +1,4 @@
-function [GsynMax] = runEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+function [GsynMax,V,Vth,GsynE,GsynI,D,F,r1,r2,o1,o2] = runEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
               VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
@@ -13,9 +13,9 @@ n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
+Fmax = 1./p0;
 if (~isempty(D))
     useSynDynamics = true;
-    Fmax = 1./p0;
 else
     useSynDynamics = false;
 end

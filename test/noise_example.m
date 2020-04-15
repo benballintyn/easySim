@@ -1,7 +1,7 @@
 % noise_example
 clear all;
 
-net = EVLIFnetwork();
+net = AEVLIFnetwork();
 
 net.addGroup('1',1000,'excitatory',1,'std_noise',1000e-12);
 

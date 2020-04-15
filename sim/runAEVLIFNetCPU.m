@@ -11,9 +11,9 @@ n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
+Fmax = 1./p0;
 if (~isempty(D))
     useSynDynamics = true;
-    Fmax = 1./p0;
 else
     useSynDynamics = false;
 end
@@ -127,12 +127,12 @@ for i=1:nT
             % update depression/facilitation variables for neurons that spiked
             d1 = arrayfun(@times,p0(allSpikes),F(allSpikes));
             d2 = arrayfun(@times,d1,D(allSpikes));
-            d3 = arrayfun(@times,d2,has_depression);
+            d3 = arrayfun(@times,d2,has_depression(allSpikes));
             D(allSpikes) = arrayfun(@minus,D(allSpikes),d3);
 
             f1 = arrayfun(@minus,Fmax(allSpikes),F(allSpikes));
             f2 = arrayfun(@times,f_fac(allSpikes),f1);
-            f3 = arrayfun(@times,f2,has_facilitation);
+            f3 = arrayfun(@times,f2,has_facilitation(allSpikes));
             F(allSpikes) = arrayfun(@plus,F(allSpikes),f3);
         else
             dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');

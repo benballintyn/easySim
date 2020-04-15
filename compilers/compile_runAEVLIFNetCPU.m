@@ -1,4 +1,4 @@
-function [] = compile_runAEVLIFNetCPU()
+function [] = compile_runAEVLIFNetCPU(net)
 % This function uses MATLAB's embedded coder to create a mex file
 % loopUpdateAEVLIFNetCPU_mex for faster simulation on the CPU
 maxN = 100000;
@@ -30,13 +30,13 @@ if (net.is_dynamic)
     ARGS{1}{21} = coder.typeof(false,[maxN+maxSpikeGen 1],[true false]); % has_facilitation
     ARGS{1}{22} = coder.typeof(false,[maxN+maxSpikeGen 1],[true false]); % has_depression
 else
-    ARGS{1}{16} = coder.typeof([]); % tau_D
-    ARGS{1}{17} = coder.typeof([]); % tau_F
-    ARGS{1}{18} = coder.typeof([]); % f_fac
-    ARGS{1}{19} = coder.typeof([]); % D
-    ARGS{1}{20} = coder.typeof([]); % F
-    ARGS{1}{21} = coder.typeof([]); % has_facilitation
-    ARGS{1}{22} = coder.typeof([]); % has_depression
+    ARGS{1}{16} = coder.typeof(nan); % tau_D
+    ARGS{1}{17} = coder.typeof(nan); % tau_F
+    ARGS{1}{18} = coder.typeof(nan); % f_fac
+    ARGS{1}{19} = coder.typeof(nan); % D
+    ARGS{1}{20} = coder.typeof(nan); % F
+    ARGS{1}{21} = coder.typeof(nan); % has_facilitation
+    ARGS{1}{22} = coder.typeof(nan); % has_depression
 end
 ARGS{1}{23} = coder.typeof(0,[maxN+maxSpikeGen 1],[true false]); % p0
 ARGS{1}{24} = coder.typeof(0,[maxN   1],[true false]); % tau_synE
@@ -69,21 +69,21 @@ if (net.is_plastic)
     ARGS{1}{50} = coder.typeof(0,[maxN 1],[true false]); % tau_minus
     ARGS{1}{51} = coder.typeof(0,[maxN 1],[true false]); % tau_y
 else
-    ARGS{1}{37} = coder.typeof([]); % is_plastic logical matrix
+    ARGS{1}{37} = coder.typeof(nan); % is_plastic logical matrix
     ARGS{1}{38} = coder.typeof('string',[1 20],[false true]); % plasticity_type string
-    ARGS{1}{39} = coder.typeof([]); % Connectivity matrix
-    ARGS{1}{40} = coder.typeof([]); % r1
-    ARGS{1}{41} = coder.typeof([]); % r2
-    ARGS{1}{42} = coder.typeof([]); % o1
-    ARGS{1}{43} = coder.typeof([]); % o2
-    ARGS{1}{44} = coder.typeof([]); % A2plus
-    ARGS{1}{45} = coder.typeof([]); % A3plus
-    ARGS{1}{46} = coder.typeof([]); % A2minus
-    ARGS{1}{47} = coder.typeof([]); % A3minus
-    ARGS{1}{48} = coder.typeof([]); % tau_plus
-    ARGS{1}{49} = coder.typeof([]); % tau_x
-    ARGS{1}{50} = coder.typeof([]); % tau_minus
-    ARGS{1}{51} = coder.typeof([]); % tau_y
+    ARGS{1}{39} = coder.typeof(nan); % Connectivity matrix
+    ARGS{1}{40} = coder.typeof(nan); % r1
+    ARGS{1}{41} = coder.typeof(nan); % r2
+    ARGS{1}{42} = coder.typeof(nan); % o1
+    ARGS{1}{43} = coder.typeof(nan); % o2
+    ARGS{1}{44} = coder.typeof(nan); % A2plus
+    ARGS{1}{45} = coder.typeof(nan); % A3plus
+    ARGS{1}{46} = coder.typeof(nan); % A2minus
+    ARGS{1}{47} = coder.typeof(nan); % A3minus
+    ARGS{1}{48} = coder.typeof(nan); % tau_plus
+    ARGS{1}{49} = coder.typeof(nan); % tau_x
+    ARGS{1}{50} = coder.typeof(nan); % tau_minus
+    ARGS{1}{51} = coder.typeof(nan); % tau_y
 end
 ARGS{1}{52} = coder.typeof(0); % nT (# of timesteps to simulate)
 ARGS{1}{53} = coder.typeof(0); % file ID for spikes

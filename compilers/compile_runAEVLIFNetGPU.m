@@ -46,13 +46,13 @@ if (net.is_dynamic)
     ARGS{1}{21} = coder.typeof(false,[N+nSpikeGenCells 1],'Gpu',true); % has_facilitation
     ARGS{1}{22} = coder.typeof(false,[N+nSpikeGenCells 1],'Gpu',true); % has_depression
 else
-    ARGS{1}{16} = coder.typeof([]); % tau_D
-    ARGS{1}{17} = coder.typeof([]); % tau_F
-    ARGS{1}{18} = coder.typeof([]); % f_fac
-    ARGS{1}{19} = coder.typeof([]); % D
-    ARGS{1}{20} = coder.typeof([]); % F
-    ARGS{1}{21} = coder.typeof([]); % has_facilitation
-    ARGS{1}{22} = coder.typeof([]); % has_depression
+    ARGS{1}{16} = coder.typeof(single(nan)); % tau_D
+    ARGS{1}{17} = coder.typeof(single(nan)); % tau_F
+    ARGS{1}{18} = coder.typeof(single(nan)); % f_fac
+    ARGS{1}{19} = coder.typeof(single(nan)); % D
+    ARGS{1}{20} = coder.typeof(single(nan)); % F
+    ARGS{1}{21} = coder.typeof(single(nan)); % has_facilitation
+    ARGS{1}{22} = coder.typeof(single(nan)); % has_depression
 end
 ARGS{1}{23} = coder.typeof(single(0),[N+nSpikeGenCells 1],'Gpu',true); % p0
 ARGS{1}{24} = coder.typeof(single(0),[N   1],'Gpu',true); % tau_synE
@@ -93,21 +93,21 @@ if (net.is_plastic)
     ARGS{1}{50} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_minus
     ARGS{1}{51} = coder.typeof(single(0),[N 1],'Gpu',true); % tau_y
 else
-    ARGS{1}{37} = coder.typeof([]); % is_plastic logical matrix
+    ARGS{1}{37} = coder.typeof(single(nan)); % is_plastic logical matrix
     ARGS{1}{38} = coder.typeof('string',[1 20],[false true]); % plasticity_type string
-    ARGS{1}{39} = coder.typeof([]); % Connectivity matrix
-    ARGS{1}{40} = coder.typeof([]); % r1
-    ARGS{1}{41} = coder.typeof([]); % r2
-    ARGS{1}{42} = coder.typeof([]); % o1
-    ARGS{1}{43} = coder.typeof([]); % o2
-    ARGS{1}{44} = coder.typeof([]); % A2plus
-    ARGS{1}{45} = coder.typeof([]); % A3plus
-    ARGS{1}{46} = coder.typeof([]); % A2minus
-    ARGS{1}{47} = coder.typeof([]); % A3minus
-    ARGS{1}{48} = coder.typeof([]); % tau_plus
-    ARGS{1}{49} = coder.typeof([]); % tau_x
-    ARGS{1}{50} = coder.typeof([]); % tau_minus
-    ARGS{1}{51} = coder.typeof([]); % tau_y
+    ARGS{1}{39} = coder.typeof(single(nan)); % Connectivity matrix
+    ARGS{1}{40} = coder.typeof(single(nan)); % r1
+    ARGS{1}{41} = coder.typeof(single(nan)); % r2
+    ARGS{1}{42} = coder.typeof(single(nan)); % o1
+    ARGS{1}{43} = coder.typeof(single(nan)); % o2
+    ARGS{1}{44} = coder.typeof(single(nan)); % A2plus
+    ARGS{1}{45} = coder.typeof(single(nan)); % A3plus
+    ARGS{1}{46} = coder.typeof(single(nan)); % A2minus
+    ARGS{1}{47} = coder.typeof(single(nan)); % A3minus
+    ARGS{1}{48} = coder.typeof(single(nan)); % tau_plus
+    ARGS{1}{49} = coder.typeof(single(nan)); % tau_x
+    ARGS{1}{50} = coder.typeof(single(nan)); % tau_minus
+    ARGS{1}{51} = coder.typeof(single(nan)); % tau_y
 end
 ARGS{1}{52} = coder.typeof(0); % nT (# of timesteps to simulate)
 ARGS{1}{53} = coder.typeof(0); % file ID for spikes

@@ -61,10 +61,10 @@ if (useGpu)
         a =          gpuArray(zeros(N,1,'single')); % Adaptation conductance
         b =          gpuArray(zeros(N,1,'single')); % Adaptation current increment on spike
     else
-        Isra = [];
-        tau_sra = [];
-        a = [];
-        b = [];
+        Isra = single(nan); % must use 0 instead of [] to avoid compilation problems
+        tau_sra = single(nan);
+        a = single(nan);
+        b = single(nan);
     end
     if (net.is_dynamic)
         tau_D = gpuArray(zeros(totalN,1,'single')); % synaptic depression time constant
@@ -75,13 +75,13 @@ if (useGpu)
         has_depression = gpuArray(false(totalN,1));
         has_facilitation = gpuArray(false(totalN,1));
     else
-        tau_D = [];
-        tau_F = [];
-        f_fac = [];
-        D     = [];
-        F     = [];
-        has_depression = [];
-        has_facilitation = [];
+        tau_D = single(nan);
+        tau_F = single(nan);
+        f_fac = single(nan);
+        D     = single(nan); % must use 0 instead of [] to avoid compilation problems
+        F     = single(nan); % must use 0 instead of [] to avoid compilation problems
+        has_depression = single(nan);
+        has_facilitation = single(nan);
     end
     if (net.is_plastic)
         r1 =         gpuArray(zeros(totalN,1,'single')); % presynaptic plasticity variable 1
@@ -99,20 +99,20 @@ if (useGpu)
         is_plastic = gpuArray(zeros(N,totalN,'logical')); % matrix to keep track of which synapses are plastic
         C =          gpuArray(zeros(N,totalN,'logical')); % Connectivity matrix
     else
-        r1 =         [];
-        r2 =         [];
-        o1 =         [];
-        o2 =         [];
-        A2plus =     []; % doublet STDP LTP factor
-        A3plus =     []; % triplet STDP LTP factor
-        A2minus =    []; % doublet STDP LTD factor
-        A3minus =    []; % triplet STDP LTD factor
-        tau_plus =   []; % r1 time constant
-        tau_x =      []; % r2 time constant
-        tau_minus =  []; % o1 time constant
-        tau_y =      []; % o2 time constant
-        is_plastic = [];
-        C =          [];
+        r1 =         single(nan); % must use 0 instead of [] to avoid compilation problems
+        r2 =         single(nan); % must use 0 instead of [] to avoid compilation problems
+        o1 =         single(nan); % must use 0 instead of [] to avoid compilation problems
+        o2 =         single(nan); % must use 0 instead of [] to avoid compilation problems
+        A2plus =     single(nan); % doublet STDP LTP factor
+        A3plus =     single(nan); % triplet STDP LTP factor
+        A2minus =    single(nan); % doublet STDP LTD factor
+        A3minus =    single(nan); % triplet STDP LTD factor
+        tau_plus =   single(nan); % r1 time constant
+        tau_x =      single(nan); % r2 time constant
+        tau_minus =  single(nan); % o1 time constant
+        tau_y =      single(nan); % o2 time constant
+        is_plastic = single(nan);
+        C =          single(nan);
     end
     
     ecells =    gpuArray(zeros(totalN,1)); % logical vector specifying which cells are excitatory
@@ -150,10 +150,10 @@ else
         a =             zeros(N,1);
         b =             zeros(N,1);
     else
-        Isra = [];
-        tau_sra = [];
-        a = [];
-        b = [];
+        Isra = nan; % must use 0 instead of [] to avoid compilation problems
+        tau_sra = nan; % must use 0 instead of [] to avoid compilation problems
+        a = nan;
+        b = nan;
     end
     if (net.is_dynamic)
         tau_D = zeros(totalN,1); % synaptic depression time constant
@@ -164,13 +164,13 @@ else
         has_facilitation = false(totalN,1);
         has_depression = false(totalN,1);
     else
-        tau_D = [];
-        tau_F = [];
-        f_fac = [];
-        D     = [];
-        F     = [];
-        has_facilitation = [];
-        has_depression = [];
+        tau_D = nan;
+        tau_F = nan;
+        f_fac = nan;
+        D     = nan; % must use 0 instead of [] to avoid compilation problems
+        F     = nan; % must use 0 instead of [] to avoid compilation problems
+        has_facilitation = nan;
+        has_depression = nan;
     end
     if (net.is_plastic)
         r1 =         zeros(totalN,1);
@@ -188,20 +188,20 @@ else
         is_plastic = false(N,totalN);
         C =          false(N,totalN);
     else
-        r1 =         [];
-        r2 =         [];
-        o1 =         [];
-        o2 =         [];
-        A2plus =     []; % doublet STDP LTP factor
-        A3plus =     []; % triplet STDP LTP factor
-        A2minus =    []; % doublet STDP LTD factor
-        A3minus =    []; % triplet STDP LTD factor
-        tau_plus =   []; % r1 time constant
-        tau_x =      []; % r2 time constant
-        tau_minus =  []; % o1 time constant
-        tau_y =      []; % o2 time constant
-        is_plastic = [];
-        C =          [];
+        r1 =         nan; % must use 0 instead of [] to avoid compilation problems
+        r2 =         nan; % must use 0 instead of [] to avoid compilation problems
+        o1 =         nan; % must use 0 instead of [] to avoid compilation problems
+        o2 =         nan; % must use 0 instead of [] to avoid compilation problems
+        A2plus =     nan; % doublet STDP LTP factor
+        A3plus =     nan; % triplet STDP LTP factor
+        A2minus =    nan; % doublet STDP LTD factor
+        A3minus =    nan; % triplet STDP LTD factor
+        tau_plus =   nan; % r1 time constant
+        tau_x =      nan; % r2 time constant
+        tau_minus =  nan; % o1 time constant
+        tau_y =      nan; % o2 time constant
+        is_plastic = nan;
+        C =          nan;
     end
     
     ecells =        zeros(totalN,1);

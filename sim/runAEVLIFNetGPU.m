@@ -1,6 +1,6 @@
-function [GsynMax] = runAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
-              Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,p0,tau_synE,tau_synI,...
-              Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+function [GsynMax,V,Vth,Isra,GsynE,GsynI,D,F,r1,r2,o1,o2] = runAEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+              Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+              p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid) %#codegen
 
@@ -13,13 +13,13 @@ n2record = length(cells2record); % # of neurons to record
 useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
-if (~isempty(D))
+Fmax = 1./p0;
+if (~isnan(D))
     useSynDynamics = true;
-    Fmax = 1./p0;
 else
     useSynDynamics = false;
 end
-if (~isempty(C))
+if (~isnan(C))
     usePlasticity = true;
 else
     usePlasticity = false;
@@ -110,12 +110,12 @@ for i=1:nT
             % update depression/facilitation variables for neurons that spiked
             d1 = arrayfun(@times,p0(allSpikes),F(allSpikes));
             d2 = arrayfun(@times,d1,D(allSpikes));
-            d3 = arrayfun(@times,d2,has_depression);
+            d3 = arrayfun(@times,d2,has_depression(allSpikes));
             D(allSpikes) = arrayfun(@minus,D(allSpikes),d3);
 
             f1 = arrayfun(@minus,Fmax(allSpikes),F(allSpikes));
             f2 = arrayfun(@times,f_fac(allSpikes),f1);
-            f3 = arrayfun(@times,f2,has_facilitation);
+            f3 = arrayfun(@times,f2,has_facilitation(allSpikes));
             F(allSpikes) = arrayfun(@plus,F(allSpikes),f3);
         else
             dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');

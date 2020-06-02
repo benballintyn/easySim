@@ -94,7 +94,7 @@ classdef gaussianConnector < connectionType
             if (obj.preGroup == obj.postGroup)
                 dGsynMat(logical(eye(obj.nPre))) = 0;
             end
-            dGsynMat = dGsynMat.*obj.weightFunction(distances);
+            dGsynMat = max(0,dGsynMat.*obj.weightFunction(distances));
         end
     end
 end

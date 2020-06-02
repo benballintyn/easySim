@@ -1,10 +1,22 @@
-function [GsynMax,V,Vth,GsynE,GsynI,D,F,r1,r2,o1,o2] = runEVLIFNetGPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
-              VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+function [GsynMax,V,Vth,GsynE,GsynI,D,F,r1,r2,o1,o2] = runEVLIFNetGPU(V_temp,Vreset,tau_ref,Vth_temp,Vth0,Vth_max,...
+              VsynE,VsynI,GsynE_temp,GsynI_temp,GsynMax_temp,tau_D,tau_F,f_fac,D_temp,F_temp,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              is_plastic,plasticity_type,C,r1_temp,r2_temp,o1_temp,o2_temp,A2plus,A3plus,A2minus,A3minus,...
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid) %#codegen
 
 coder.gpu.kernelfun; % for code generation
+
+GsynMax = GsynMax_temp;
+V = V_temp;
+Vth = Vth_temp;
+GsynE = GsynE_temp;
+GsynI = GsynI_temp;
+D = D_temp;
+F = F_temp;
+r1 = r1_temp;
+r2 = r2_temp;
+o1 = o1_temp;
+o2 = o2_temp;
 
 N = size(V,1); % # of simulated neurons
 nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
@@ -14,12 +26,12 @@ useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
 Fmax = 1./p0;
-if (~isempty(D))
+if (~isnan(D))
     useSynDynamics = true;
 else
     useSynDynamics = false;
 end
-if (~isempty(C))
+if (~isnan(C))
     usePlasticity = true;
 else
     usePlasticity = false;
@@ -102,12 +114,12 @@ for i=1:nT
             % update depression/facilitation variables for neurons that spiked
             d1 = arrayfun(@times,p0(allSpikes),F(allSpikes));
             d2 = arrayfun(@times,d1,D(allSpikes));
-            d3 = arrayfun(@times,d2,has_depression);
+            d3 = arrayfun(@times,d2,has_depression(allSpikes));
             D(allSpikes) = arrayfun(@minus,D(allSpikes),d3);
 
             f1 = arrayfun(@minus,Fmax(allSpikes),F(allSpikes));
             f2 = arrayfun(@times,f_fac(allSpikes),f1);
-            f3 = arrayfun(@times,f2,has_facilitation);
+            f3 = arrayfun(@times,f2,has_facilitation(allSpikes));
             F(allSpikes) = arrayfun(@plus,F(allSpikes),f3);
         else
             dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
@@ -193,6 +205,6 @@ for i=1:nT
         end
     end
 end
-fprintf('%i simulated spikes\n',int32(nSimulatedSpikes));
+fprintf('%i simulated spikes  ',int32(nSimulatedSpikes));
 fprintf('%i generated spikes\n',int32(nGeneratedSpikes));
 end

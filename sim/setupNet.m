@@ -26,7 +26,7 @@ for i=1:net.nSpikeGenerators
     end_ind = start_ind + net.spikeGeneratorInfo(i).N - 1;
     net.spikeGeneratorInfo(i).start_ind = start_ind;
     net.spikeGeneratorInfo(i).end_ind = end_ind;
-    offset = offset + N;
+    offset = offset + net.spikeGeneratorInfo(i).N;
     totalN = totalN + net.spikeGeneratorInfo(i).N;
 end
 nSpikeGen = totalN - N; % total number of poisson spike generator neurons

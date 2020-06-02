@@ -1,4 +1,4 @@
-function [GsynMax,recordV,recordVth,recordIsyn,recordIapp,recordD,recordF] = runAEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+function [GsynMax,recordV,recordVth,recordIsra,recordGsynE,recordGsynI,recordD,recordF,recordr1,recordr2,recordo1,recordo2,recordIsyn,recordIapp] = runAEVLIFNetCPU(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
               Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
@@ -12,12 +12,12 @@ useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
 Fmax = 1./p0;
-if (~isempty(D))
+if (~isnan(D))
     useSynDynamics = true;
 else
     useSynDynamics = false;
 end
-if (~isempty(C))
+if (~isnan(C))
     usePlasticity = true;
 else
     usePlasticity = false;
@@ -25,6 +25,9 @@ end
 if (recordVars)
     recordV = zeros(N,nT);
     recordVth = zeros(N,nT);
+    recordIsra = zeros(N,nT);
+    recordGsynE = zeros(N,nT);
+    recordGsynI = zeros(N,nT);
     recordIsyn = zeros(N,nT);
     recordIapp = zeros(N,nT);
     if (useSynDynamics)
@@ -34,13 +37,43 @@ if (recordVars)
         recordD = [];
         recordF = [];
     end
+    if (usePlasticity)
+        recordr1 = zeros(N,nT);
+        recordr2 = zeros(N,nT);
+        recordo1 = zeros(N,nT);
+        recordo2 = zeros(N,nT);
+    else
+        recordr1 = [];
+        recordr2 = [];
+        recordo1 = [];
+        recordo2 = [];
+    end
 else
-    recordV = [];
-    recordVth = [];
-    recordIsyn = [];
-    recordIapp = [];
-    recordD = [];
-    recordF = [];
+    recordV = zeros(N,1);
+    recordVth = zeros(N,1);
+    recordIsra = zeros(N,1);
+    recordGsynE = zeros(N,1);
+    recordGsynI = zeros(N,1);
+    recordIsyn = zeros(N,1);
+    recordIapp = zeros(N,1);
+    if (useSynDynamics)
+        recordD = zeros(N,1);
+        recordF = zeros(N,1);
+    else
+        recordD = [];
+        recordF = [];
+    end
+    if (usePlasticity)
+        recordr1 = zeros(N,1);
+        recordr2 = zeros(N,1);
+        recordo1 = zeros(N,1);
+        recordo2 = zeros(N,1);
+    else
+        recordr1 = [];
+        recordr2 = [];
+        recordo1 = [];
+        recordo2 = [];
+    end
 end
 % if no spike file was given, don't record any spikes
 if (spkfid < 0)
@@ -213,11 +246,38 @@ for i=1:nT
     if (recordVars)
         recordV(:,i) = V;
         recordVth(:,i) = Vth;
+        recordIsra(:,i) = Isra;
+        recordGsynE(:,i) = GsynE;
+        recordGsynI(:,i) = GsynI;
         recordIsyn(:,i) = Isyn;
         recordIapp(:,i) = Iapp;
         if (useSynDynamics)
             recordD(:,i) = D;
             recordF(:,i) = F;
+        end
+        if (usePlasticity)
+            recordr1(:,i) = r1;
+            recordr2(:,i) = r2;
+            recordo1(:,i) = o1;
+            recordo2(:,i) = o2;
+        end
+    else
+        recordV = V;
+        recordVth = Vth;
+        recordIsra = Isra;
+        recordGsynE = GsynE;
+        recordGsynI = GsynI;
+        recordIsyn = Isyn;
+        recordIapp = Iapp;
+        if (useSynDynamics)
+            recordD = D;
+            recordF = F;
+        end
+        if (usePlasticity)
+            recordr1 = r1;
+            recordr2 = r2;
+            recordo1 = o1;
+            recordo2 = o2;
         end
     end
     

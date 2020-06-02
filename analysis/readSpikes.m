@@ -12,7 +12,8 @@ function [data] = readSpikes(fname,cells2record)
 %              the id # of the neuron that spiked. The size of the 1st
 %              dimension of this matrix will be proportional to the # of
 %              spikes in the simulation
-raw=fread(fopen(fname),inf,'int32');
+fid = fopen(fname);
+raw=fread(fid,inf,'int32');
 if (isempty(raw))
     data = [];
     return
@@ -33,5 +34,6 @@ for i=1:length(raw)
         count=count+1;
     end
 end
+fclose('all');
 end
 

@@ -66,7 +66,7 @@ classdef gradientConnector < connectionType
                     else
                         connProb = obj.connProbFunction(obj.xcoordsPost(j));
                         if (rand < connProb)
-                            dGsynMat(j,i) = obj.weightFunction(obj.xcoordsPost(j));
+                            dGsynMat(j,i) = max(0,obj.weightFunction(obj.xcoordsPost(j)));
                         end
                     end
                 end

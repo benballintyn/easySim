@@ -742,6 +742,11 @@ classdef AEVLIFnetwork < handle
                 end
             end
         end
+        
+        function ecells = getEcells(self)
+            for i=1:self.nGroups
+            end
+        end
     end
     
     methods (Static)

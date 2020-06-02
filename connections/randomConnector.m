@@ -49,7 +49,7 @@ classdef randomConnector < connectionType
             end
             c(c > obj.connProb) = 0; c(c ~= 0) = 1;
             dGsynMat = obj.weightDist.genSample([obj.nPost obj.nPre]);
-            dGsynMat = c.*dGsynMat;
+            dGsynMat = max(0,c.*dGsynMat);
         end
     end
 end

@@ -100,7 +100,7 @@ if (useGpu)
     switch class(net)
         case 'EVLIFnetwork'
             tic;
-            [GsynMax] = runEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+            [GsynMax,V,Vth,Isra,GsynE,GsynI,D,F,r1,r2,o1,o2] = runEVLIFNetGPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
               VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
@@ -115,6 +115,18 @@ if (useGpu)
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid);
             t=toc;
     end
+    outputs.GsynMax_post = GsynMax;
+    outputs.V = V;
+    outputs.Vth = Vth;
+    outputs.Isra = Isra;
+    outputs.GsynE = GsynE;
+    outputs.GsynI = GsynI;
+    outputs.D = D;
+    outputs.F = F;
+    outputs.r1 = r1;
+    outputs.r2 = r2;
+    outputs.o1 = o1;
+    outputs.o2 = o2;
     fclose(spkfid);
     disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
     save([p.Results.sim_dir '/net.mat'],'net','-mat')
@@ -128,7 +140,7 @@ else
         case 'EVLIFnetwork'
             recordVars = p.Results.recordVars;
             tic;
-            [GsynMax,recordV,recordVth,recordIsyn,recordIapp,recordD,recordF] = runEVLIFNetCPU_mex(V,Vreset,...
+            [GsynMax,recordV,recordVth,recordGsynE,recordGsynI,recordD,recordF,recordr1,recordr2,recordo1,recordo2,recordIsyn,recordIapp] = runEVLIFNetCPU_mex(V,Vreset,...
               tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
@@ -137,22 +149,27 @@ else
         case 'AEVLIFnetwork'
             recordVars = p.Results.recordVars;
             tic;
-            size(D)
-            size(F)
-            [GsynMax,recordV,recordVth,recordIsyn,recordIapp,recordD,recordF] = runAEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
+            [GsynMax,recordV,recordVth,recordIsra,recordGsynE,recordGsynI,recordD,recordF,recordr1,recordr2,recordo1,recordo2,recordIsyn,recordIapp] = runAEVLIFNetCPU_mex(V,Vreset,tau_ref,Vth,Vth0,Vth_max,...
               Isra,tau_sra,a,b,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid,recordVars);
             t=toc;
+            outputs.Isra = recordIsra;
     end
-    outputs.GsynMax = GsynMax;
-    outputs.V_recording = recordV;
-    outputs.Vth_recording = recordVth;
+    outputs.GsynMax_post = GsynMax;
+    outputs.V = recordV;
+    outputs.Vth = recordVth;
+    outputs.GsynE = recordGsynE;
+    outputs.GsynI = recordGsynI;
+    outputs.D = recordD;
+    outputs.F = recordF;
+    outputs.r1 = recordr1;
+    outputs.r2 = recordr2;
+    outputs.o1 = recordo1;
+    outputs.o2 = recordo2;
     outputs.Isyn_recording = recordIsyn;
     outputs.Iapp_recording = recordIapp;
-    outputs.D_recording = recordD;
-    outputs.F_recording = recordF;
     disp(['Total sim time: ' num2str(t) '. Time per timestep = ' num2str(t/nT) ' --> ' num2str((t/nT)/dt) 'x real time'])
     fclose(spkfid);
     save([p.Results.sim_dir '/net.mat'],'net','-mat')

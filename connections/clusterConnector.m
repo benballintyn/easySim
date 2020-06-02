@@ -61,13 +61,13 @@ classdef clusterConnector < connectionType
                     end
                     if (obj.clusterIDs(i) == obj.clusterIDs(j))
                         if (c(j,i) < obj.intraConnProb)
-                            dGsynMat(j,i) = obj.intraWeightDist.genSample([1 1]);
+                            dGsynMat(j,i) = max(0,obj.intraWeightDist.genSample([1 1]));
                         else
                             dGsynMat(j,i) = 0;
                         end
                     else
                         if (c(j,i) < obj.interConnProb)
-                            dGsynMat(j,i) = obj.interWeightDist.genSample([1 1]);
+                            dGsynMat(j,i) = max(0,obj.interWeightDist.genSample([1 1]));
                         else
                             dGsynMat(j,i) = 0;
                         end

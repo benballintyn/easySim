@@ -83,28 +83,20 @@ end
 for i=1:nT
     
     % Update spike thresholds
-    vth1 = arrayfun(@minus,Vth0,Vth); % (Vth0 - Vth)
-    dVthdt = arrayfun(@rdivide,vth1,tau_ref); % (Vth0 - Vth)./tau_ref
-    Vth = arrayfun(@plus,Vth,dVthdt*dt); % Vth = Vth + dt*[(Vth0 - Vth)./tau_ref]
+    Vth = Vth + dt*((Vth0 - Vth)./tau_ref);
     
     if (useSynDynamics)
         % update depression/facilitation variables
-        dDdt = arrayfun(@rdivide,(1 - D),tau_D);
-        dFdt = arrayfun(@rdivide,(1 - F),tau_F);
-        D = arrayfun(@plus,D,dDdt*dt);
-        F = arrayfun(@plus,F,dFdt*dt);
+        D = D + dt*((1-D)./tau_D);
+        F = F + dt*((1-F)./tau_F);
     end
     
     if (usePlasticity)
         % decay plasticity variables
-        dr1dt = arrayfun(@rdivide,-r1,tau_plus);
-        dr2dt = arrayfun(@rdivide,-r2,tau_x);
-        do1dt = arrayfun(@rdivide,-o1,tau_minus);
-        do2dt = arrayfun(@rdivide,-o2,tau_y);
-        r1 = arrayfun(@plus,r1,dr1dt*dt);
-        r2 = arrayfun(@plus,r2,dr2dt*dt);
-        o1 = arrayfun(@plus,o1,do1dt*dt);
-        o2 = arrayfun(@plus,o2,do2dt*dt);
+        r1 = r1 + dt*(-r1./tau_plus);
+        r2 = r2 + dt*(-r2./tau_x);
+        o1 = o1 + dt*(-o1./tau_minus);
+        o2 = o2 + dt*(-o2./tau_y);
     end
     
     spiked = (V > Vth); % determine simulated neurons that spiked
@@ -129,67 +121,45 @@ for i=1:nT
     
     e_spiked = logical(allSpikes.*ecells); % all excitatory simulated and spike generating neurons that spiked
     i_spiked = logical(allSpikes.*icells); % all inhibitory simulated and spike generating neurons that spiked
-    dGsynEdt = arrayfun(@rdivide,-GsynE,tau_synE); % decay in excitatory synaptic conductances
-    dGsynIdt = arrayfun(@rdivide,-GsynI,tau_synI); % decay in inhibitory synaptic conductances
     
-    GsynE = arrayfun(@plus,GsynE,dGsynEdt*dt);
-    GsynI = arrayfun(@plus,GsynI,dGsynIdt*dt);
+    GsynE = GsynE + dt*(-GsynE./tau_synE);
+    GsynI = GsynI + dt*(-GsynI./tau_synI);
 
     if (areAnySpikes)
         if (useSynDynamics)
             % multiply release probability with maximum synaptic conductance
-            dGsynE1 = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
-            dGsynE2 = bsxfun(@times,dGsynE1,F(e_spiked)');
-            dGsynE3 = bsxfun(@times,dGsynE2,D(e_spiked)');
-            dGsynI1 = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
-            dGsynI2 = bsxfun(@times,dGsynI1,F(i_spiked)');
-            dGsynI3 = bsxfun(@times,dGsynI2,D(i_spiked)');
+            dGsynE1 = p0(e_spiked)'.*F(e_spiked)'.*D(e_spiked)';
+            dGsynE2 = bsxfun(@times,GsynMax(:,e_spiked),dGsynE1);
+            
+            dGsynI1 = p0(i_spiked)'.*F(i_spiked)'.*D(i_spiked)';
+            dGsynI2 = bsxfun(@times,GsynMax(:,i_spiked),dGsynI1);
+            
             % sum across all inputs
-            dGsynE_sum = sum(dGsynE3,2);
-            dGsynI_sum = sum(dGsynI3,2);
+            dGsynE_sum = sum(dGsynE2,2);
+            dGsynI_sum = sum(dGsynI2,2);
             
             % update depression/facilitation variables for neurons that spiked
-            d1 = arrayfun(@times,p0(allSpikes),F(allSpikes));
-            d2 = arrayfun(@times,d1,D(allSpikes));
-            d3 = arrayfun(@times,d2,has_depression);
-            D(allSpikes) = arrayfun(@minus,D(allSpikes),d3);
-            
-            f1 = arrayfun(@minus,Fmax(allSpikes),F(allSpikes));
-            f2 = arrayfun(@times,f_fac(allSpikes),f1);
-            f3 = arrayfun(@times,f2,has_facilitation);
-            F(allSpikes) = arrayfun(@plus,F(allSpikes),f3);
+            D(allSpikes) = D(allSpikes) - p0(allSpikes).*F(allSpikes).*D(allSpikes).*has_depression(allSpikes);
+            F(allSpikes) = F(allSpikes) + (Fmax(allSpikes) - F(allSpikes)).*f_fac(allSpikes).*has_facilitation(allSpikes);
         else
             dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
             dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
             dGsynE_sum = sum(dGsynE,2);
             dGsynI_sum = sum(dGsynI,2);
         end
-        GsynE = arrayfun(@plus,GsynE,dGsynE_sum);
-        GsynI = arrayfun(@plus,GsynI,dGsynI_sum);
+        GsynE = GsynE + dGsynE_sum;
+        GsynI = GsynI + dGsynI_sum;
     end
     
-    % Compute total synaptic current for each neuron
-    Isyn = arrayfun(@plus,arrayfun(@times,GsynE,arrayfun(@minus,VsynE,V)),arrayfun(@times,GsynI,arrayfun(@minus,VsynI,V)));
+    Isyn = GsynE.*(VsynE - V) + GsynI.*(VsynI - V);
     
     % add noise to any input currents
     curIapp = Iapp;
-    curIapp = arrayfun(@plus,curIapp,arrayfun(@times,std_noise,randn(N,1)));
+    curIapp = curIapp + std_noise.*randn(N,1);
     
     % update membrane voltages
-    f1 = (1./Cm); % (1./Cm)
-    f2 = arrayfun(@minus,El,V); % El - V
-    f3 = arrayfun(@minus,V,Vth); % V - Vth
-    f4 = arrayfun(@rdivide,f3,dth); % (V - Vth)/dth
-    f5 = arrayfun(@exp,f4); % exp((V - Vth)/dth)
-    f6 = arrayfun(@times,dth,f5); % dth.*exp((V - Vth)/dth)
-    f7 = arrayfun(@plus,f2,f6); % (El - V) + dth.*exp((V - Vth)/dth)
-    f8 = arrayfun(@times,Gl,f7); % Gl.*[(El - V) + dth.*exp((V - Vth)/dth)]
-    f9 = arrayfun(@plus,f8,Isyn); % Gl.*[(El - V) + dth.*exp((V - Vth)/dth)] + Isyn
-    f10 = arrayfun(@plus,f9,curIapp); % Gl.*[(El - V) + dth.*exp((V - Vth)/dth)] + Isyn + Iapp
-    dVdt = arrayfun(@times,f1,f10); % (1./Cm).*(Gl.*[(El - V) + dth.*exp((V - Vth)/dth)] + Isyn + Iapp)
-    
-    V = arrayfun(@plus,V,dVdt*dt); % V = V + dVdt*dt
-    V = arrayfun(@max,Vreset,V); % bound membrane potentials to be >= than the reset value
+    V = V + dt*(1./Cm).*(Gl.*((El - V) + dth.*exp((V - Vth)./dth)) + Isyn + curIapp - Isra);
+    V = max(V,Vreset);
     
     if (usePlasticity)
         % update synaptic weights

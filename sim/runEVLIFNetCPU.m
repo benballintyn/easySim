@@ -1,8 +1,20 @@
-function [GsynMax,recordV,recordVth,recordGsynE,recordGsynI,recordD,recordF,recordr1,recordr2,recordo1,recordo2,recordIsyn,recordIapp] = runEVLIFNetCPU(V,Vreset,...
-              tau_ref,Vth,Vth0,Vth_max,VsynE,VsynI,GsynE,GsynI,GsynMax,tau_D,tau_F,f_fac,D,F,has_facilitation,has_depression,...
+function [GsynMax,recordV,recordVth,recordGsynE,recordGsynI,recordD,recordF,recordr1,recordr2,recordo1,recordo2,recordIsyn,recordIapp] = runEVLIFNetCPU(V_temp,Vreset,...
+              tau_ref,Vth_temp,Vth0,Vth_max,VsynE,VsynI,GsynE_temp,GsynI_temp,GsynMax_temp,tau_D,tau_F,f_fac,D_temp,F_temp,has_facilitation,has_depression,...
               p0,tau_synE,tau_synI,Cm,Gl,El,dth,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
-              is_plastic,plasticity_type,C,r1,r2,o1,o2,A2plus,A3plus,A2minus,A3minus,...
+              is_plastic,plasticity_type,C,r1_temp,r2_temp,o1_temp,o2_temp,A2plus,A3plus,A2minus,A3minus,...
               tau_plus,tau_x,tau_minus,tau_y,nT,spkfid,recordVars) %#codegen
+
+GsynMax = GsynMax_temp;
+V = V_temp;
+Vth = Vth_temp;
+GsynE = GsynE_temp;
+GsynI = GsynI_temp;
+D = D_temp;
+F = F_temp;
+r1 = r1_temp;
+r2 = r2_temp;
+o1 = o1_temp;
+o2 = o2_temp;          
 
 N = size(V,1); % # of simulated neurons
 nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons

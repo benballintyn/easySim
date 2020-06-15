@@ -7,12 +7,7 @@ classdef gradientConnector < connectionType
         nPost
         connProbFunction
         weightFunction
-        xcoordsPre
         xcoordsPost
-        ycoordsPre
-        ycoordsPost
-        xmax
-        ymax
     end
     
     methods
@@ -47,12 +42,7 @@ classdef gradientConnector < connectionType
             obj.nPost = groupInfo(postGroup).end_ind - groupInfo(postGroup).start_ind + 1;
             obj.connProbFunction = connProbFunction;
             obj.weightFunction = weightFunction;
-            obj.xcoordsPre = groupInfo(preGroup).xcoords;
             obj.xcoordsPost = groupInfo(postGroup).xcoords;
-            obj.ycoordsPre = groupInfo(preGroup).ycoords;
-            obj.ycoordsPost = groupInfo(postGroup).ycoords;
-            obj.xmax = groupInfo(preGroup).coordinateFrame.xmax;
-            obj.ymax = groupInfo(pregroup).coordinateFrame.ymax;
         end
         
         function dGsynMat = genConn(obj)

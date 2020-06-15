@@ -1,8 +1,8 @@
 classdef gradientConnector < connectionType
     
     properties
-        preGroup
-        postGroup
+        %preGroup % defined in superclass
+        %postGroup % defined in superclass
         nPre
         nPost
         connProbFunction

@@ -600,7 +600,7 @@ classdef AEVLIFnetwork < handle
                     elseif (strcmp(connType,'gaussian'))
                         error('SpikeGenerators do not support gaussian connections')
                     elseif (strcmp(connType,'gradient'))
-                        conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo);
+                        conn=gradientConnector(src_id,tgt_id,connParams.connProbFunction,connParams.weightFunction,obj.groupInfo,obj.spikeGeneratorInfo);
                     end
                     obj.spikeGeneratorInfo(-src_id).targets = [obj.spikeGeneratorInfo(-src_id).targets tgt_id];
                     obj.spikeGeneratorInfo(-src_id).connections = [obj.spikeGeneratorInfo(-src_id).connections conn];

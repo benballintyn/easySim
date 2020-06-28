@@ -47,8 +47,15 @@ classdef gradientConnector < connectionType
         
         function dGsynMat = genConn(obj)
             % call this function to generate the synaptic connectivity
-            % matrix defined by this connection. 
-            dGsynMat = zeros(obj.nPost,obj.nPre);
+            % matrix defined by this connection.
+            connProbs = obj.connProbFunction(obj.xcoordsPost);
+            C = rand(obj.nPost,obj.nPre);
+            C(C < connProbs') = 1;
+            C(C < 1) = 0;
+            D = repmat(obj.xcoordsPost',1,obj.nPre);
+            W = obj.weightFunction(D);
+            dGsynMat = C.*W;
+            %{
             for i=1:obj.nPre
                 for j=1:obj.nPost
                     if (obj.preGroup == obj.postGroup && i == j)
@@ -61,6 +68,7 @@ classdef gradientConnector < connectionType
                     end
                 end
             end
+            %}
         end
     end
 end

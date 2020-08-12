@@ -3,12 +3,13 @@ clear all;
 
 net = AEVLIFnetwork();
 
-net.addGroup('1',1000,'excitatory',1,'std_noise',1000e-12);
+net.addGroup('1',800,'excitatory',1,'std_noise',1000e-12);
+net.addGroup('2',200,'inhibitory',1,'std_noise',1000e-12);
 
-ntimesteps = 100000;
+ntimesteps = 10000;
 useGpu = true;
 spikefile = 'spikes.bin';
-sim_dir = 'results/noise_example';
+sim_dir = '~/phd/easySim/results/noise_example';
 [outputs] = easysim(net,ntimesteps,useGpu,...
                                     'sim_dir',sim_dir,...
                                     'spikefile',spikefile,...

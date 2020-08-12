@@ -276,7 +276,7 @@ classdef AEVLIFnetwork < handle
             default_std_VsynE = 0;
             default_mean_VsynI = -.07; % -80mV
             default_std_VsynI = 0;
-            default_mean_tau_synE = 20e-3; % 10ms
+            default_mean_tau_synE = 20e-3; % 20ms
             default_std_tau_synE = 0;
             default_mean_tau_synI = 10e-3; % 1ms
             default_std_tau_synI = 0;
@@ -451,6 +451,21 @@ classdef AEVLIFnetwork < handle
             %   neuronType - 'excitatory' or 'inhibitory'
             %
             %   firingRate - firing rate of this group in Hz
+            %
+            %   varargin:
+            %       'mean_A2plus'    - mean doublet LTP factor for
+            %                             triplet STDP
+            %       'std_A2plus'     - standard deviation of the doublet
+            %                             LTP factor.
+            %       'mean_A3plus'    - mean triplet LTP factor
+            %       'std_A3plus'     - standard deviation of the triplet
+            %       'mean_tau_plus'  - mean decay time constant of the r1
+            %                             (presynaptic) STDP variable
+            %       'std_tau_plus'   - standard deviation of the r1
+            %                             decay time constant
+            %       'mean_tau_x'     - mean decay time constant of the
+            %                             r2 (presynaptic) STDP variable
+            %       'std_tau_x'      - standard deviation of the r2
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
             default_mean_tau_D = .25; % 250ms (Paul Miller Textbook)
@@ -539,6 +554,10 @@ classdef AEVLIFnetwork < handle
             %                build the connection object. Different
             %                connection types require different inputs.
             %                These are listed below.
+            %       General connParams:
+            %           is_plastic - true if this connection is subject to
+            %                        synaptic plasticity (triplet STDP)
+            %
             %       connParams by connType:
             %       'random':
             %           connParams.connProb - connection probability

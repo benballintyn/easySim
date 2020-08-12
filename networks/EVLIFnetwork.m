@@ -251,7 +251,7 @@ classdef EVLIFnetwork < handle
             default_std_tau_ref = 0;
             default_mean_VsynE = 0; % 0mV
             default_std_VsynE = 0;
-            default_mean_VsynI = -.08; % -80mV
+            default_mean_VsynI = -.07; % -80mV
             default_std_VsynI = 0;
             default_mean_tau_synE = 20e-3; % 20ms
             default_std_tau_synE = 0;

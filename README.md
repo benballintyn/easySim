@@ -19,7 +19,7 @@ To get started, check out the examples in the 'test' folder. There are examples 
 There is currently no comprehensive documentation page although I intend to make one in the near future. However, there is extensive documentation within the code itself. From the MATLAB command line simply type help 'class/function name here' for in depth information about each class and function (e.g. help EVLIFnetwork).
 
 # Planned additions
-At the moment, easySim does not support dynamic synapses (facilitiation and depression). The additions of synaptic facilitation and depression will be added in the coming weeks/months. While easySim does have triplet STDP plasticity I intend to add a dopamine-based plasticity rule as well to enable reinforcement-learning simulations.
+While easySim does have triplet STDP plasticity I intend to add a dopamine-based plasticity rule as well to enable reinforcement-learning simulations.
 
 Networks supporting simple LIF or Exponential-LIf neurons will be added soon.
 

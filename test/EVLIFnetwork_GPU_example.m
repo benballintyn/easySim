@@ -38,7 +38,7 @@ net.connect(2,1,'gaussian',conn_2_1_params);
 % connect the inhibitory group (group 3) to both group 1 (with 10% connection probability) 
 % and group 2 (with 5% connection probability) using a random connectivity 
 %(with synaptic weights drawn from a uniform distribution)
-weightRange = 0:1e-12:1e-9;
+weightRange = 0:1e-11:1e-8;
 uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
 conn_3_1_params.connProb = .1;
 conn_3_1_params.weightDistribution = uniformWeightDist;
@@ -58,10 +58,10 @@ net.connect(3,3,'random',conn_3_3_params);
 % SPIKE GENERATOR GROUP IDS ARE GIVEN NEGATIVE VALUES TO DISTINGUISH THEM
 % FROM SIMULATED NEURON GROUPS. THEREFORE THIS GROUP WILL RECEIVE AN ID OF
 % -1
-net.addSpikeGenerator('spikegen1',100, 'excitatory',10);
+net.addSpikeGenerator('spikegen1',500, 'excitatory',100);
 conn_spkgen_3_params = conn_3_1_params;
-conn_spkgen_3_params.connProb = .1;
-net.connect(-1,3,'random',conn_spkgen_3_params); 
+conn_spkgen_3_params.connProb = .5;
+net.connect(-1,1,'random',conn_spkgen_3_params); 
 
 % Simulate this network on the GPU for 10,000 timesteps and record the spikes
 % from groups 1-3 in a file 'spikes.bin'. Adding the optional input

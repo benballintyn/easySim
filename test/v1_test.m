@@ -9,9 +9,7 @@ net.addGroup('2',200,'inhibitory',1,'std_noise',100e-12);
 
 weightRange = 1e-9:1e-11:1.8e-7;
 %uniformWeightDist = weightDistribution(weightRange,ones(1,length(weightRange))*(1/length(weightRange)));
-meanWt = .5e-7; stdWt = .5*meanWt;
-px = (1/(stdWt.*sqrt(2*pi)))*exp(-.5.*((weightRange - meanWt)./stdWt).^2);
-gaussWeightDist = weightDistribution(weightRange,px);
+
 clusterConnParams.nClusters = 8;
 clusterConnParams.intraConnProb = .3;
 clusterConnParams.interConnProb = .01;

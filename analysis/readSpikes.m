@@ -18,9 +18,11 @@ if (isempty(raw))
     data = [];
     return
 end
+nRaw = length(raw);
+modVal = floor(nRaw/100);
 count = 1;
 doSkip = false;
-for i=1:length(raw)
+for i=1:nRaw
     if (doSkip)
         doSkip = false;
         continue;
@@ -32,6 +34,9 @@ for i=1:length(raw)
         data(count,1) = curTime;
         data(count,2) = cells2record(raw(i));
         count=count+1;
+    end
+    if (mod(i,modVal) == 0)
+        disp([num2str((i/nRaw)*100) '% done'])
     end
 end
 fclose('all');

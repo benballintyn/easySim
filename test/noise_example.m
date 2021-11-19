@@ -3,8 +3,8 @@ clear all;
 
 net = AEVLIFnetwork();
 
-net.addGroup('1',800,'excitatory',1,'std_noise',1000e-12);
-net.addGroup('2',200,'inhibitory',1,'std_noise',1000e-12);
+net.addGroup('1',800,'excitatory',1,'std_noise',900e-12);
+net.addGroup('2',200,'inhibitory',1,'std_noise',900e-12);
 
 ntimesteps = 10000;
 useGpu = true;

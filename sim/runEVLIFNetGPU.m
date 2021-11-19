@@ -26,12 +26,12 @@ useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
 Fmax = 1./p0;
-if (~isnan(D))
+if (~any(isnan(D)))
     useSynDynamics = true;
 else
     useSynDynamics = false;
 end
-if (~isnan(C))
+if (~any(isnan(C)))
     usePlasticity = true;
 else
     usePlasticity = false;

@@ -27,12 +27,12 @@ useRecord = (n2record > 0); % determine if any neurons should be recorded
 nSimulatedSpikes = 0;
 nGeneratedSpikes = 0;
 Fmax = 1./p0;
-if (~isnan(D))
+if (~any(isnan(D)))
     useSynDynamics = true;
 else
     useSynDynamics = false;
 end
-if (~isnan(C))
+if (~any(isnan(C)))
     usePlasticity = true;
 else
     usePlasticity = false;
@@ -84,8 +84,8 @@ for i=1:nT
     if (areSimSpikes) % If there are any simulated spikes
         V(spiked) = Vreset(spiked); % reset membrane voltages of spiking neurons
         Vth(spiked) = Vth_max(spiked); % set spike threshold to max
-        %Isra(spiked) = arrayfun(@plus,Isra(spiked),b(spiked)); % Increment the spike rate adaptation currents
-        Isra(spiked) = Isra(spiked) + b(spiked);
+        %Isra(spiked) = arrayfun(@plus,Isra(spiked),b(spiked)); 
+        Isra(spiked) = Isra(spiked) + b(spiked); % Increment the spike rate adaptation currents
     end
     
     e_spiked = logical(allSpikes.*ecells); % all excitatory simulated and spike generating neurons that spiked

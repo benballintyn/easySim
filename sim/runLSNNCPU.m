@@ -1,5 +1,5 @@
 function [W,recordV,recordVth,recordD,recordF,recordIsyn,recordIapp] = runLSNNCPU(V_temp,Vreset,Vth_temp,Vth0,...
-              t_refrac,tau_m,W_temp,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
+              t_refrac,tau_m,beta,tau_a,W_temp,Iapp,std_noise,dt,ecells,icells,spikeGenProbs,cells2record,...
               is_plastic,plasticity_type,C,nT,spkfid,recordVars) %#codegen
 
 W = W_temp;
@@ -7,6 +7,9 @@ V = V_temp;
 Vth = Vth_temp;
 
 N = size(V,1); % # of simulated neurons
+timeSinceSpike = nan(N,1);
+rho = exp(-dt/tau_a);
+
 nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
 useSpikeGen = (nSpikeGen > 0); % determine if there are any spike generators
 n2record = length(cells2record); % # of neurons to record
@@ -60,18 +63,9 @@ end
 for i=1:nT
     
     % Update spike thresholds
-    Vth = Vth + dt*((Vth0 - Vth)./tau_ref);
+    Vth = Vth0 + beta.*a; % Threshold update (Bellec et al., 2020)
     
-    % Update adaptation currents
-    Isra = Isra + dt*((a.*(V - El) - Isra)./tau_sra);
-    
-    if (useSynDynamics)
-        % update depression/facilitation variables
-        D = D + dt*((1-D)./tau_D);
-        F = F + dt*((1-F)./tau_F);
-    end
-    
-    if (usePlasticity)
+    if (usePlasticity) % Need to change for LSNNs
         % decay plasticity variables
         r1 = r1 + dt*(-r1./tau_plus);
         r2 = r2 + dt*(-r2./tau_x);
@@ -96,41 +90,19 @@ for i=1:nT
     
     if (areSimSpikes) % If there are any simulated spikes
         V(spiked) = Vreset(spiked); % reset membrane voltages of spiking neurons
-        Vth(spiked) = Vth_max(spiked); % set spike threshold to max
-        Isra(spiked) = Isra(spiked) + b(spiked);
     end
     
     e_spiked = logical(allSpikes.*ecells); % all excitatory simulated and spike generating neurons that spiked
     i_spiked = logical(allSpikes.*icells); % all inhibitory simulated and spike generating neurons that spiked
-    
-    GsynE = GsynE + dt*(-GsynE./tau_synE);
-    GsynI = GsynI + dt*(-GsynI./tau_synI);
 
     if (areAnySpikes)
-        if (useSynDynamics)
-            % multiply release probability with maximum synaptic conductance
-            dGsynE1 = p0(e_spiked)'.*F(e_spiked)'.*D(e_spiked)';
-            dGsynE2 = bsxfun(@times,GsynMax(:,e_spiked),dGsynE1);
-            
-            dGsynI1 = p0(i_spiked)'.*F(i_spiked)'.*D(i_spiked)';
-            dGsynI2 = bsxfun(@times,GsynMax(:,i_spiked),dGsynI1);
-            
-            % sum across all inputs
-            dGsynE_sum = sum(dGsynE2,2);
-            dGsynI_sum = sum(dGsynI2,2);
-            
-            % update depression/facilitation variables for neurons that spiked
-            D(allSpikes) = D(allSpikes) - p0(allSpikes).*F(allSpikes).*D(allSpikes).*has_depression(allSpikes);
-            F(allSpikes) = F(allSpikes) + (Fmax(allSpikes) - F(allSpikes)).*f_fac(allSpikes).*has_facilitation(allSpikes);
-        else
-            dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
-            dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
-            dGsynE_sum = sum(dGsynE,2);
-            dGsynI_sum = sum(dGsynI,2);
-        end
-        GsynE = GsynE + dGsynE_sum;
-        GsynI = GsynI + dGsynI_sum;
+        dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
+        dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
+        dGsynE_sum = sum(dGsynE,2);
+        dGsynI_sum = sum(dGsynI,2);
     end
+    GsynE = GsynE + dGsynE_sum;
+    GsynI = GsynI + dGsynI_sum;
     
     % Compute total synaptic current for each neuron
     Isyn = GsynE.*(VsynE - V) + GsynI.*(VsynI - V);

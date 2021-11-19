@@ -9,16 +9,15 @@ classdef AEVLIFnetwork < handle
        coordinateFrames
        spikeGeneratorInfo
        is_plastic
-       is_dynamic
     end
     
     methods
         function obj = LSNN()
             % This class holds all of the necessary information about an
             % LSNN(Bellec et al., 2020). These networks consist of a mixture
-	    % of standard LIF neurons and LIF neurons with an adaptive threshold
-	    % (ALIF neurons). This type of network is meant to be paired with the
-	    % e-prop learning algorithm.
+	        % of standard LIF neurons and LIF neurons with an adaptive threshold
+	        % (ALIF neurons). This type of network is meant to be paired with the
+	        % e-prop learning algorithm.
             %
             % METHODS:
             %   addGroup(name,N,neuronType,coordinateFrame,varargin)
@@ -52,9 +51,9 @@ classdef AEVLIFnetwork < handle
             obj.nSpikeGeneratorNeurons = 0;
             obj.groupInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'coordinateFrame',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{},...
-                'std_noise',{},'mean_V0',{},'std_V0',{},'mean_Vreset',{},'std_Vreset',{},'mean_Vth0',{},'std_Vth0',{},...
-                'mean_t_refrac',{},'std_t_refrac',{},'mean_tau_m',{},'std_tau_m',{},...
-                'xcoords',{},'ycoords',{},'record',{});
+                'std_noise',{},'mean_V0',{},'std_V0',{},'mean_Vreset',{},'std_Vreset',{},'mean_Vth',{},'std_Vth',{},...
+                'mean_t_refrac',{},'std_t_refrac',{},'mean_tau_m',{},'std_tau_m',{},'mean_beta',{},'std_beta',{},...
+                'mean_tau_a',{},'std_tau_a',{},'xcoords',{},'ycoords',{},'record',{});
             obj.spikeGeneratorInfo = struct('id',{},'name',{},'N',{},'neuronType',{},'isExcitatory',{},'isInhibitory',{},...
                 'firingRate',{},'start_ind',{},'end_ind',{},'targets',{},'connections',{},'connectionParams',{});
             obj.coordinateFrames = struct('ID',{},'xmin',{},'xmax',{},'ymin',{},'ymax',{});
@@ -98,32 +97,39 @@ classdef AEVLIFnetwork < handle
             %       6. 'mean_Vth0'      - mean baseline spike threshold
             %       7. 'std_Vth0'       - standard deviation of baseline spike
             %                             threshold
-	    %       8. 'mean_t_refrac'  - mean time (across cells) membrane 
-	    %				  voltage is held at 0 following a spike
-	    %       9. 'std_t_refrac'   - standard deviation of refractory time
-	    %  				  (across cells)
-	    %	    10. 'mean_tau_m'    - mean (across cells) membrane time constant
-	    %	    11. 'std_tau_m'     - standard deviation (across cells) of the
-	    %				  membrane time constant
-            %      54. 'record'         - can be true or false. Indicates
+	        %       8. 'mean_t_refrac'  - mean time (across cells) membrane 
+	        %				  voltage is held at 0 following a spike
+	        %       9. 'std_t_refrac'   - standard deviation of refractory time
+	        %  				  (across cells)
+	        %	    10. 'mean_tau_m'    - mean (across cells) membrane time constant
+	        %	    11. 'std_tau_m'     - standard deviation (across cells) of the
+            %				              membrane time constant
+            %       12. 'mean_beta'     - mean (across cells) strength of threshold
+            %                             adaptation (controls amplitude of threshold
+            %                             increase following a spike)
+            %       13. 'std_beta'      - standard deviation of beta across cells
+            %       14. 'mean_tau_a'    - mean (across cells) time constant for threshold
+            %                             adaptation
+            %       15. 'std_tau_a'     - standard deviation (across cells) of tau_a
+            %       54. 'record'        - can be true or false. Indicates
             %                             whether to record this groups spike
             %                             times to a file or not
-            %      55. 'xmin'           - minimum x-value of the coordinate
+            %       55. 'xmin'          - minimum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      56. 'xmax'           - maximum x-value of the coordinate
+            %       56. 'xmax'          - maximum x-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      57. 'ymin'           - minimum y-value of the coordinate
+            %       57. 'ymin'          - minimum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
             %                             first in this coordinate frame
-            %      58. 'ymax'           - maximum y-value of the coordinate
+            %       58. 'ymax'          - maximum y-value of the coordinate
             %                             frame this group lies in. NOTE:
             %                             If using this optional parameter,
             %                             this neuron group must be the
@@ -133,7 +139,8 @@ classdef AEVLIFnetwork < handle
             orderedFieldNames = {'id','name','N','neuronType','isExcitatory','isInhibitory',...
                 'coordinateFrame','start_ind','end_ind','targets','connections','connectionParams',...
                 'std_noise','mean_V0','std_V0','mean_Vreset','std_Vreset','mean_Vth0','std_Vth0',...
-                'mean_t_refrac','std_t_refrac','mean_tau_m','std_tau_m','xcoords','ycoords','record'};
+                'mean_t_refrac','std_t_refrac','mean_tau_m','std_tau_m','mean_beta','std_beta',...
+                'mean_tau_a','std_tau_a','xcoords','ycoords','record'};
             % Create inputParser and assign default values and checks
             p = inputParser;
             validNeuronTypes = {'excitatory','inhibitory'};
@@ -147,12 +154,16 @@ classdef AEVLIFnetwork < handle
             default_std_V0 = 0;
             default_mean_Vreset = -.08; % -80mV
             default_std_Vreset = 0;
-            default_mean_Vth0 = -.05; % -50mV
+            default_mean_Vth0 = 1; % Bellec et al., 2020
             default_std_Vth0 = 0;
-	    default_mean_t_refrac = 2e-3; % 2ms
-	    default_std_t_refrac = 0;
-	    default_mean_tau_m = 20e-3; % 20ms
-	    default_std_tau_m = 0;
+    	    default_mean_t_refrac = 2e-3; % 2ms
+	        default_std_t_refrac = 0;
+	        default_mean_tau_m = 20e-3; % 20ms
+	        default_std_tau_m = 0;
+            default_mean_beta = 0.07; % From Bellec et al., 2020
+            default_std_beta = 0;
+            default_mean_tau_a = 0.02; % 20ms
+            default_std_tau_a = 0;
             default_record = true;
             checkNeuronType = @(x) any(validatestring(neuronType,validNeuronTypes));
             validNumCheck = @(x) isnumeric(x) && ~isinf(x) && ~isnan(x);
@@ -173,10 +184,14 @@ classdef AEVLIFnetwork < handle
             addParameter(p,'std_Vreset',default_std_Vreset',validNumCheck);
             addParameter(p,'mean_Vth0',default_mean_Vth0,validNumCheck);
             addParameter(p,'std_Vth0',default_std_Vth0,validNumCheck);
-	    addParameter(p,'mean_t_refrac',default_mean_t_refrac,validNumCheck);
-	    addParameter(p,'std_t_refrac',default_std_t_refrac,validNumCheck);
-	    addParameter(p,'mean_tau_m',default_mean_tau_m,validNumCheck);
-	    addParameter(p,'std_tau_m',default_std_tau_m,validNumCheck);
+    	    addParameter(p,'mean_t_refrac',default_mean_t_refrac,validNumCheck);
+	        addParameter(p,'std_t_refrac',default_std_t_refrac,validNumCheck);
+	        addParameter(p,'mean_tau_m',default_mean_tau_m,validNumCheck);
+	        addParameter(p,'std_tau_m',default_std_tau_m,validNumCheck);
+            addParameter(p,'mean_beta',default_mean_beta,validNumCheck);
+            addParameter(p,'std_beta',default_std_beta,validNumCheck);
+            addParameter(p,'mean_tau_a',default_mean_tau_a,validNumCheck);
+            addParameter(p,'std_tau_a',default_std_tau_a,validNumCheck);
             addParameter(p,'record',default_record,@islogical)
             parse(p,name,N,neuronType,coordinateFrame,varargin{:})
             

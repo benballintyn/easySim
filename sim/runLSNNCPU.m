@@ -8,7 +8,8 @@ Vth = Vth_temp;
 
 N = size(V,1); % # of simulated neurons
 timeSinceSpike = nan(N,1);
-rho = exp(-dt/tau_a);
+rho = exp(-dt./tau_a);
+alpha = exp(-dt./tau_m);
 
 nSpikeGen = length(spikeGenProbs); % # of poisson spike generator neurons
 useSpikeGen = (nSpikeGen > 0); % determine if there are any spike generators
@@ -92,28 +93,19 @@ for i=1:nT
         V(spiked) = Vreset(spiked); % reset membrane voltages of spiking neurons
     end
     
-    e_spiked = logical(allSpikes.*ecells); % all excitatory simulated and spike generating neurons that spiked
-    i_spiked = logical(allSpikes.*icells); % all inhibitory simulated and spike generating neurons that spiked
-
-    if (areAnySpikes)
-        dGsynE = bsxfun(@times,GsynMax(:,e_spiked),p0(e_spiked)');
-        dGsynI = bsxfun(@times,GsynMax(:,i_spiked),p0(i_spiked)');
-        dGsynE_sum = sum(dGsynE,2);
-        dGsynI_sum = sum(dGsynI,2);
-    end
-    GsynE = GsynE + dGsynE_sum;
-    GsynI = GsynI + dGsynI_sum;
-    
     % Compute total synaptic current for each neuron
-    Isyn = GsynE.*(VsynE - V) + GsynI.*(VsynI - V);
+    Isyn = W*allSpikes;
     
     % add noise to any input currents
     curIapp = Iapp;
     curIapp = curIapp + std_noise.*randn(N,1);
     
     % update membrane voltages
-    V = V + dt*(1./Cm).*(Gl.*((El - V) + dth.*exp((V - Vth)./dth)) + Isyn + curIapp - Isra);
+    V = alpha.*V + Isyn + curIapp - spiked.*Vth;
     V = max(V,Vreset);
+
+    % update adaptation variables
+    a = rho.*a + spiked;
     
     if (usePlasticity)
         % update synaptic weights
@@ -164,15 +156,8 @@ for i=1:nT
     if (recordVars)
         recordV(:,i) = V;
         recordVth(:,i) = Vth;
-        recordIsra(:,i) = Isra;
-        recordGsynE(:,i) = GsynE;
-        recordGsynI(:,i) = GsynI;
         recordIsyn(:,i) = Isyn;
         recordIapp(:,i) = curIapp;
-        if (useSynDynamics)
-            recordD(:,i) = D;
-            recordF(:,i) = F;
-        end
         if (usePlasticity)
             recordr1(:,i) = r1;
             recordr2(:,i) = r2;
@@ -182,15 +167,8 @@ for i=1:nT
     else
         recordV = V;
         recordVth = Vth;
-        recordIsra = Isra;
-        recordGsynE = GsynE;
-        recordGsynI = GsynI;
         recordIsyn = Isyn;
         recordIapp = curIapp;
-        if (useSynDynamics)
-            recordD = D;
-            recordF = F;
-        end
         if (usePlasticity)
             recordr1 = r1;
             recordr2 = r2;
